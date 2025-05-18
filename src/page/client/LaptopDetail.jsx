@@ -1,0 +1,518 @@
+import React, { useEffect, useState } from 'react';
+import {
+    ShoppingCartOutlined,
+    HeartOutlined,
+    DownOutlined,
+    UpOutlined,
+    StarFilled,
+    StarOutlined,
+    CheckOutlined,
+    ShareAltOutlined,
+    CarOutlined,
+    SafetyCertificateOutlined,
+    UserOutlined
+} from '@ant-design/icons';
+import {
+    Badge,
+    Button,
+    Card,
+    Tabs,
+    Avatar,
+    Divider,
+    Image,
+    Rate, notification, Spin
+} from 'antd';
+import '../style/LaptopDetail.css';
+import banner1 from '../../assets/x.webp';
+import { getProductDetailById } from "../../Redux/actions/ProductThunk";
+import { useDispatch } from "react-redux";
+import {insertCartItem} from "../../Redux/actions/CartItemThunk";
+
+const { TabPane } = Tabs;
+const { Meta } = Card;
+
+const LaptopDetail = () => {
+    const [selectedImage, setSelectedImage] = useState(0);
+    const [selectedVariant, setSelectedVariant] = useState(0);
+    const [optionId,setOptionId] = useState(0);
+    const [selectedOption, setSelectedOption] = useState(0);
+    const [activeTab, setActiveTab] = useState("specs");
+    const [showMoreSpecs, setShowMoreSpecs] = useState(false);
+    const [productDetail, setProductDetail] = useState(null);
+    const dispatch = useDispatch();
+    const [loading, setLoading] = useState(true);
+    const [varientId,setVariantId] = useState(0);
+    useEffect(() => {
+        const fetchProductDetail = async () => {
+            try {
+                setLoading(true);
+                const response = await dispatch(getProductDetailById(optionId || 1));
+                setProductDetail(response);
+
+                // Lấy variantId trực tiếp từ response thay vì productDetail
+                const firstVariantId = response?.productVariants?.[0]?.id;
+                if (firstVariantId) {
+                    setVariantId(firstVariantId);
+                }
+            } catch (error) {
+                notification.error({
+                    message: 'Lỗi',
+                    description: 'Không thể tải sản phẩm',
+                    placement: 'topRight',
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProductDetail();
+    }, [dispatch, selectedOption, optionId]);
+
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+    };
+
+    const calculatePrice = () => {
+        if (!productDetail) return 0;
+        const basePrice = productDetail.productOptions[selectedOption].price;
+        const variantPrice = productDetail.productVariants[selectedVariant].priceDiff;
+        return basePrice + variantPrice;
+    };
+
+    const renderStars = (rating) => {
+        return [1, 2, 3, 4, 5].map((star) => (
+            star <= rating ?
+                <StarFilled key={star} className="star-filled" /> :
+                <StarOutlined key={star} className="star-outlined" />
+        ));
+    };
+
+    const specifications = [
+        { name: "CPU", value: productDetail?.productOptions[selectedOption]?.cpu || '' },
+        { name: "RAM", value: productDetail?.productOptions[selectedOption]?.ram || '' },
+        { name: "Loại RAM", value: productDetail?.ramType || '' },
+        { name: "Khe RAM", value: productDetail?.ramSlot || '' },
+        { name: "Ổ cứng", value: productDetail?.productOptions[selectedOption]?.storage || '' },
+        { name: "Nâng cấp ổ cứng", value: productDetail?.storageUpgrade || '' },
+        { name: "Card đồ họa", value: productDetail?.productOptions[selectedOption]?.gpu || '' },
+        { name: "Kích thước màn hình", value: productDetail?.displaySize || '' },
+        { name: "Độ phân giải", value: productDetail?.displayResolution || '' },
+        { name: "Tần số quét", value: productDetail?.displayRefreshRate || '' },
+        { name: "Công nghệ màn hình", value: productDetail?.displayTechnology || '' },
+        { name: "Hệ điều hành", value: productDetail?.operatingSystem || '' },
+        { name: "Pin", value: productDetail?.battery || '' },
+        { name: "Cổng kết nối", value: productDetail?.ports || '' },
+        { name: "Kích thước", value: productDetail?.dimension || '' },
+        { name: "Trọng lượng", value: productDetail?.weight || '' },
+        { name: "Bảo mật", value: productDetail?.security || '' },
+        { name: "Âm thanh", value: productDetail?.audioFeatures || '' },
+        { name: "Webcam", value: productDetail?.webcam || '' },
+        { name: "Kết nối không dây", value: `${productDetail?.wifi || ''}, ${productDetail?.bluetooth || ''}` },
+        { name: "Bàn phím", value: productDetail?.keyboard || '' },
+        { name: "Tính năng đặc biệt", value: productDetail?.specialFeatures || '' },
+    ];
+    const [userData, setUserData] = useState(() => {
+        const savedUser = localStorage.getItem('USER_LOGIN');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
+    const ReviewItem = ({ name, avatar, date, rating, comment }) => {
+        return (
+            <div className="review-item">
+                <div className="review-header">
+                    <div className="reviewer-info">
+                        <Avatar
+                            size={48}
+                            src={avatar}
+                            icon={<UserOutlined />}
+                            alt={name}
+                        />
+                        <div>
+                            <div className="reviewer-name">{name}</div>
+                            <div className="review-date">{date}</div>
+                        </div>
+                    </div>
+                    <Rate
+                        disabled
+                        value={rating}
+                        className="review-rating"
+                        character={({ index }) => index < rating ? <StarFilled /> : <StarOutlined />}
+                    />
+                </div>
+                <p className="review-comment">{comment}</p>
+            </div>
+        );
+    };
+
+    if (loading || !productDetail) {
+        return (
+            <div className="loading-container">
+                <Spin size="large" />
+                <p>Đang tải...</p>
+            </div>
+        );
+    }
+    const handleBuyNow = async () => {
+        if(varientId) {
+            const result = await dispatch(insertCartItem({
+                quantity: 1,
+                productVariantId: varientId,
+                userId: userData?.id,
+            }));
+            if (result === 200) {
+                window.location.href = `http://localhost:3000/cart/${userData?.id}`;
+            } else {
+                notification.error({
+                    message: "Lỗi",
+                    description: "Không thể thêm vào giỏ hàng",
+                    placement: "topRight",
+                });
+            }
+        }
+    };
+
+
+    return (
+        <div className="laptop-detail-container">
+            <div className="product-detail-grid">
+                <div className="product-images">
+                    <div className="main-image-container">
+                        <Badge.Ribbon text="Mới" color="red" className={"ribbon"}>
+                            <Image
+                                src={productDetail.product.images[selectedImage]?.url || banner1}
+                                alt={productDetail.product.name}
+                                className="main-image"
+                                preview={false}
+                            />
+                        </Badge.Ribbon>
+                    </div>
+
+                    <div
+                        className="thumbnail-container"
+                        style={{
+                            display: 'flex',
+                            overflowX: 'auto',
+                            overflowY: 'hidden',
+                            gap: '8px',
+                            maxWidth: '800px',
+                            padding: '8px 0',
+                        }}
+                    >
+                        {productDetail.product.images.map((image, index) => (
+                            <div
+                                key={index}
+                                className={`thumbnail ${selectedImage === index ? 'thumbnail-active' : ''}`}
+                                onClick={() => setSelectedImage(index)}
+                                style={{
+                                    flex: '0 0 auto',
+                                    width: '80px',
+                                    height: '80px',
+                                    border: selectedImage === index
+                                        ? '2px solid #1890ff'
+                                        : '1px solid #ddd',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    overflow: 'hidden',
+                                    transition: 'all 0.3s'
+                                }}
+                            >
+                                <Image
+                                    src={image.url}
+                                    alt={`Thumbnail ${index + 1}`}
+                                    preview={false}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover'
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="features-grid">
+                        <Card className="feature-card">
+                            <CarOutlined className="feature-icon" />
+                            <Meta
+                                title="Giao hàng miễn phí"
+                                description="Trong 24 giờ"
+                                className="feature-meta"
+                            />
+                        </Card>
+                        <Card className="feature-card">
+                            <SafetyCertificateOutlined className="feature-icon" />
+                            <Meta
+                                title="Bảo hành 24 tháng"
+                                description="Chính hãng"
+                                className="feature-meta"
+                            />
+                        </Card>
+                        <Card className="feature-card">
+                            <ShareAltOutlined className="feature-icon" />
+                            <Meta
+                                title="Đổi trả 30 ngày"
+                                description="Miễn phí"
+                                className="feature-meta"
+                            />
+                        </Card>
+                    </div>
+                </div>
+
+                {/* Right column - Details */}
+                <div className="product-info">
+                    <div className="product-header">
+                        <h1 className="product-title">{productDetail.product.name}</h1>
+                        <div className="rating-container">
+                            <div className="stars">
+                                {renderStars(4.5)}
+                            </div>
+                            <span className="rating-text">4.5/5 (128 đánh giá)</span>
+                        </div>
+
+                        <div className="price-container">
+                            <span className="current-price">{formatPrice(calculatePrice())}</span>
+                            <span className="old-price">{formatPrice(calculatePrice() * 1.1)}</span>
+                            <Badge count="-10%" style={{ backgroundColor: '#f5222d' }} />
+                        </div>
+                        <p className="product-description">
+                            {productDetail.product.description}
+                        </p>
+                    </div>
+
+                    {/* Configuration Selection */}
+                    <div className="config-section">
+                        <h3 className="section-title">Chọn cấu hình</h3>
+                        <div className="config-options">
+                            {productDetail.productOptions.map((option, index) => (
+                                <Card
+                                    key={option.id}
+                                    className={`config-card-small ${selectedOption === index ? 'config-card-active' : ''}`}
+                                    onClick={() => {
+                                        setSelectedOption(index);
+                                        setOptionId(option.id);
+                                    }}
+                                    style={{ marginBottom: 16, position: 'relative' }}
+                                >
+                                    {index === 1 && ( // Assuming the second option is most popular
+                                        <Badge.Ribbon text="Phổ biến" color="red" placement="end">
+                                            <div></div>
+                                        </Badge.Ribbon>
+                                    )}
+                                    <div className="config-content-small"
+                                         style={{ display: 'flex', alignItems: 'center' }}>
+                                        <div
+                                            className={`config-radio ${selectedOption === index ? 'config-radio-active' : ''}`}
+                                            style={{
+                                                width: 20,
+                                                height: 20,
+                                                borderRadius: '50%',
+                                                border: '2px solid #1890ff',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                marginRight: 12,
+                                                backgroundColor: selectedOption === index ? '#1890ff' : 'transparent'
+                                            }}
+                                        >
+                                            {selectedOption === index &&
+                                                <CheckOutlined style={{ color: 'white', fontSize: 12 }} />}
+                                        </div>
+                                        <div className="config-details-small">
+                                            <h4 className="config-name" style={{ margin: 0 }}>{option.code}</h4>
+                                            <div className="config-price"
+                                                 style={{ color: '#ff4d4f', fontWeight: 'bold', margin: '4px 0' }}>
+                                                {formatPrice(option.price)}
+                                            </div>
+                                            <div className="spec-item">
+                                                <span>{option.cpu} | {option.ram} - {option.storage} | {option.gpu}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Color Selection */}
+                    <div className="color-section">
+                        <h3 className="section-title">Chọn màu sắc</h3>
+                        <div className="color-options">
+                            {productDetail.productVariants.map((variant, index) => (
+                                <div
+                                    key={variant.id}
+                                    className="color-option"
+                                    onClick={() => {
+                                        setVariantId(variant.id);
+                                        setSelectedVariant(index);
+                                    }}
+
+                                >
+                                    <div
+                                        className={`color-circle ${selectedVariant === index ? 'color-circle-active' : ''}`}
+                                        style={{ backgroundColor: getColorHex(variant.color) }}
+                                    />
+                                    <span className={`color-name ${selectedVariant === index ? 'color-name-active' : ''}`}>
+                                        {variant.color}
+                                    </span>
+                                        <span className="color-price-adjustment">
+                                            +{formatPrice(variant.priceDiff)}
+                                        </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="action-buttons">
+                        <Button
+                            type="primary"
+                            size="large"
+                            className="buy-now-btn"
+                            onClick={handleBuyNow}
+                        >
+                            <ShoppingCartOutlined />
+                            Mua ngay
+                        </Button>
+
+                        <div className="secondary-buttons">
+                            <Button size="large" className="secondary-btn">
+                                <ShoppingCartOutlined />
+                                Thêm vào giỏ
+                            </Button>
+                            <Button size="large" className="secondary-btn">
+                                <HeartOutlined />
+                                Yêu thích
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tabs Section */}
+            <div className="tabs-section">
+                <Tabs defaultActiveKey="specs" onChange={(key) => setActiveTab(key)}>
+                    <TabPane tab="Thông số kỹ thuật" key="specs">
+                        <Card>
+                            <div className="specs-grid">
+                                {specifications.slice(0, showMoreSpecs ? specifications.length : 8).map((spec, index) => (
+                                    spec.value && (
+                                        <div key={index} className="spec-row">
+                                            <span className="spec-label">{spec.name}</span>
+                                            <span className="spec-value">{spec.value}</span>
+                                        </div>
+                                    )
+                                ))}
+                            </div>
+                            {specifications.length > 8 && (
+                                <Button
+                                    type="text"
+                                    className="toggle-specs-btn"
+                                    onClick={() => setShowMoreSpecs(!showMoreSpecs)}
+                                    icon={showMoreSpecs ? <UpOutlined /> : <DownOutlined />}
+                                >
+                                    {showMoreSpecs ? 'Thu gọn' : 'Xem thêm thông số'}
+                                </Button>
+                            )}
+                        </Card>
+                    </TabPane>
+                    <TabPane tab="Mô tả sản phẩm" key="description">
+                        <Card>
+                            <div className="product-description-content">
+                                <h3>{productDetail.product.name} - Hiệu năng vượt trội, thiết kế đỉnh cao</h3>
+                                <p>
+                                    {productDetail.product.description}
+                                </p>
+
+                                <h4>Hiệu năng vượt trội</h4>
+                                <p>
+                                    Được trang bị bộ vi xử lý {productDetail.productOptions[selectedOption].cpu} cùng card đồ họa {productDetail.productOptions[selectedOption].gpu},
+                                    {productDetail.product.name} dễ dàng xử lý mọi tác vụ từ gaming đến đồ họa chuyên nghiệp. RAM {productDetail.productOptions[selectedOption].ram} tốc độ cao và ổ
+                                    cứng {productDetail.productOptions[selectedOption].storage} giúp mọi thao tác diễn ra mượt mà, không độ trễ.
+                                </p>
+
+                                <h4>Màn hình chất lượng cao</h4>
+                                <p>
+                                    Màn hình {productDetail.displaySize} với độ phân giải {productDetail.displayResolution} và tần số quét {productDetail.displayRefreshRate} mang đến hình ảnh sắc nét,
+                                    màu sắc chính xác và chuyển động mượt mà. Công nghệ {productDetail.displayTechnology} giúp hiển thị hình ảnh chất lượng cao.
+                                </p>
+
+                                <h4>Thiết kế tinh tế</h4>
+                                <p>
+                                    Với trọng lượng chỉ {productDetail.weight} và kích thước {productDetail.dimension}, {productDetail.product.name} là một trong những laptop mỏng nhẹ
+                                    nhất trong phân khúc. Thiết kế hiện đại với các tính năng {productDetail.specialFeatures} mang đến trải nghiệm sử dụng tuyệt vời.
+                                </p>
+                            </div>
+                        </Card>
+                    </TabPane>
+                    <TabPane tab={`Đánh giá (128)`} key="reviews">
+                        <Card>
+                            <div className="reviews-header">
+                                <div className="rating-overview">
+                                    <div className="rating-score">4.5</div>
+                                    <div>
+                                        <div className="stars-container">
+                                            {renderStars(4)}
+                                            <StarFilled className="star-half" />
+                                        </div>
+                                        <div className="rating-count">Dựa trên 128 đánh giá</div>
+                                    </div>
+                                </div>
+                                <Button type="primary">Viết đánh giá</Button>
+                            </div>
+
+                            <div className="reviews-list">
+                                <ReviewItem
+                                    name="Nguyễn Văn A"
+                                    avatar="/placeholder.svg"
+                                    date="15/04/2023"
+                                    rating={5}
+                                    comment="Laptop rất tốt, hiệu năng mạnh mẽ, chơi game mượt mà. Pin trâu, màn hình đẹp. Rất hài lòng với sản phẩm này!"
+                                />
+                                <Divider />
+                                <ReviewItem
+                                    name="Trần Thị B"
+                                    avatar="/placeholder.svg"
+                                    date="02/03/2023"
+                                    rating={4}
+                                    comment="Máy chạy nhanh, mát, thiết kế đẹp. Chỉ tiếc là hơi nặng một chút so với mong đợi. Nhưng nhìn chung rất ổn."
+                                />
+                                <Divider />
+                                <ReviewItem
+                                    name="Lê Văn C"
+                                    avatar="/placeholder.svg"
+                                    date="18/02/2023"
+                                    rating={5}
+                                    comment="Quá tuyệt vời, đáng đồng tiền bát gạo. Chơi game cực mượt, làm việc nhanh. Màn hình hiển thị sắc nét."
+                                />
+
+                                <Button type="default" className="view-more-reviews">
+                                    Xem thêm đánh giá
+                                </Button>
+                            </div>
+                        </Card>
+                    </TabPane>
+                </Tabs>
+            </div>
+        </div>
+    );
+};
+
+// Helper function to convert color names to hex values
+const getColorHex = (colorName) => {
+    const colorMap = {
+        'Silver': '#C0C0C0',
+        'Black': '#1a1a1a',
+        'Blue': '#0066cc',
+        'Red': '#ff0000',
+        'Gold': '#ffd700',
+        'White': '#ffffff',
+        'Gray': '#808080',
+        'Space Gray': '#717378',
+        'Rose Gold': '#b76e79',
+        'Green': '#008000',
+        'Pink': '#ffc0cb'
+    };
+    return colorMap[colorName] || '#1a1a1a';
+};
+
+export default LaptopDetail;
