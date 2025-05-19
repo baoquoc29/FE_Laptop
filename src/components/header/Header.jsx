@@ -20,6 +20,10 @@ import LoginModal from "../../page/account/LoginModal";
 import RegisterModal from "../../page/account/RegisterModal";
 import ChangePasswordModal from "../../page/account/ChangePasswordModal";
 import {NotificationContext} from "../NotificationProvider";
+import SearchBar from "../../page/client/SearchBar";
+import {getProductDetailById} from "../../Redux/actions/ProductThunk";
+import {useDispatch} from "react-redux";
+import {totalCartItem} from "../../Redux/actions/CartItemThunk";
 const Header = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -31,11 +35,34 @@ const Header = () => {
     });
     const navigate = useNavigate();
     const notification = useContext(NotificationContext);
-
+    const [totalCartItems,setTotalCartItems] = useState(0);
+    const dispatch = useDispatch();
+    const [loading, setLoading] = useState(true);
     const handleLoginClick = () => {
         setShowLoginModal(true);
         setShowRegisterModal(false);
     };
+    useEffect(() => {
+        if (!userData || !userData.id) return;
+
+        const fetchTotalCartItems = async () => {
+            try {
+                setLoading(true);
+                const response = await dispatch(totalCartItem(userData.id));
+                setTotalCartItems(response);
+            } catch (error) {
+                notification.error({
+                    message: 'Lỗi',
+                    description: 'Không thể tải sản phẩm',
+                    placement: 'topRight',
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTotalCartItems();
+    }, [dispatch, userData?.id]);
 
     const closeLoginModal = () => {
         setShowLoginModal(false);
@@ -79,9 +106,6 @@ const Header = () => {
     // User dropdown menu
     const userMenu = (
         <Menu>
-            <Menu.Item key="profile" icon={<User size={16} />}>
-                <Link to="/account/profile">Thông tin tài khoản</Link>
-            </Menu.Item>
             <Menu.Item
                 key="orders"
                 icon={<History size={16} />}
@@ -154,16 +178,7 @@ const Header = () => {
                             <span className="logo-text">TechLaptop</span>
                         </Link>
                     </div>
-
-                    <div className="search-container">
-                        <div className="search-wrapper">
-                            <Search className="search-icon" />
-                            <Input
-                                placeholder="Tìm kiếm laptop, phụ kiện..."
-                                className="search-input"
-                            />
-                        </div>
-                    </div>
+                            <SearchBar></SearchBar>
 
                     <div className="header-right">
                         {userData ? (
@@ -207,7 +222,7 @@ const Header = () => {
                                 window.location.href = `/cart/${userData.id}`;
                             }}
                         >
-                            <Badge count={3} className="cart-badge">
+                            <Badge count={totalCartItems || 0} className="cart-badge">
                                 <ShoppingCart className="icon" />
                             </Badge>
                         </Button>

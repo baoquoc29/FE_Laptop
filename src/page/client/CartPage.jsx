@@ -6,7 +6,7 @@ import { NotificationContext } from "../../components/NotificationProvider";
 import {
     deleteAllCartItems,
     deleteCartItem,
-    getCartItemByIdUser,
+    getCartItemByIdUser, totalCartItem,
     updateCartItemQuantity
 } from "../../Redux/actions/CartItemThunk";
 import { useSelector, useDispatch } from "react-redux";
@@ -81,7 +81,6 @@ const CartPage = () => {
         };
         fetchCartItems();
     }, [currentPage, userData?.id, dispatch, notification]);
-
     const showPagination = totalItems > PAGE_SIZE;
 
     const handleSelectProduct = (productId, checked) => {
@@ -262,6 +261,7 @@ const CartPage = () => {
             setTotalItems(prev => prev - 1);
             setSelectedProducts(prev => prev.filter(itemId => itemId !== id));
             message.success("Xóa sản phẩm thành công");
+            await dispatch(totalCartItem(userData.id));
         } catch (error) {
             notification.error({
                 message: 'Lỗi',
@@ -282,7 +282,7 @@ const CartPage = () => {
             setTotalItems(0);
             setSelectedProducts([]);
             setSelectAll(false);
-
+            await dispatch(totalCartItem(userData.id));
             notification.success({
                 message: 'Thành công',
                 description: 'Đã xóa tất cả sản phẩm khỏi giỏ hàng',
@@ -325,7 +325,7 @@ const CartPage = () => {
     };
 
     const handleContinueShopping = () => {
-        navigate("/products");
+        navigate("/products/search");
     };
 
     if (loading && cartItems.length === 0) {

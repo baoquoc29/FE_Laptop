@@ -27,6 +27,7 @@ import banner1 from '../../assets/x.webp';
 import { getProductDetailById } from "../../Redux/actions/ProductThunk";
 import { useDispatch } from "react-redux";
 import {insertCartItem} from "../../Redux/actions/CartItemThunk";
+import {useParams} from "react-router-dom";
 
 const { TabPane } = Tabs;
 const { Meta } = Card;
@@ -34,7 +35,6 @@ const { Meta } = Card;
 const LaptopDetail = () => {
     const [selectedImage, setSelectedImage] = useState(0);
     const [selectedVariant, setSelectedVariant] = useState(0);
-    const [optionId,setOptionId] = useState(0);
     const [selectedOption, setSelectedOption] = useState(0);
     const [activeTab, setActiveTab] = useState("specs");
     const [showMoreSpecs, setShowMoreSpecs] = useState(false);
@@ -42,32 +42,48 @@ const LaptopDetail = () => {
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(true);
     const [varientId,setVariantId] = useState(0);
-    useEffect(() => {
-        const fetchProductDetail = async () => {
-            try {
-                setLoading(true);
-                const response = await dispatch(getProductDetailById(optionId || 1));
-                setProductDetail(response);
+    const { id } = useParams();
+    const [optionId, setOptionId] = useState(id);
+    const fetchProductDetail = async (optionId) => {
+        try {
+            setLoading(true);
+            const response = await dispatch(getProductDetailById(optionId));
+            setProductDetail(response);
+            const selectedOptionIndex = response?.productOptions.findIndex(option => option.id.toString() === id.toString());
 
-                // Lấy variantId trực tiếp từ response thay vì productDetail
-                const firstVariantId = response?.productVariants?.[0]?.id;
-                if (firstVariantId) {
-                    setVariantId(firstVariantId);
-                }
-            } catch (error) {
-                notification.error({
-                    message: 'Lỗi',
-                    description: 'Không thể tải sản phẩm',
+            if (selectedOptionIndex !== -1) {
+                setSelectedOption(selectedOptionIndex);
+            } else {
+                // Nếu không tìm thấy, chọn option đầu tiên và thông báo
+                setSelectedOption(0);
+                notification.warning({
+                    message: 'Thông báo',
+                    description: 'Cấu hình không tồn tại, đã chọn cấu hình mặc định',
                     placement: 'topRight',
                 });
-            } finally {
-                setLoading(false);
             }
-        };
 
-        fetchProductDetail();
-    }, [dispatch, selectedOption, optionId]);
+            // Lấy variantId đầu tiên
+            const firstVariantId = response?.productVariants?.[0]?.id;
+            if (firstVariantId) {
+                setVariantId(firstVariantId);
+            }
 
+            return response;
+        } catch (error) {
+            notification.error({
+                message: 'Lỗi',
+                description: 'Không thể tải sản phẩm',
+                placement: 'topRight',
+            });
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    };
+    useEffect(() => {
+        fetchProductDetail(id);
+    }, [dispatch, id]);
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
@@ -75,8 +91,13 @@ const LaptopDetail = () => {
 
     const calculatePrice = () => {
         if (!productDetail) return 0;
-        const basePrice = productDetail.productOptions[selectedOption].price;
-        const variantPrice = productDetail.productVariants[selectedVariant].priceDiff;
+
+        // Tìm option dựa trên optionId
+        const option = productDetail.productOptions.find(opt => opt.id.toString() === optionId.toString()) ||
+            productDetail.productOptions[0];
+
+        const basePrice = option.price;
+        const variantPrice = productDetail.productVariants[selectedVariant]?.priceDiff || 0;
         return basePrice + variantPrice;
     };
 
@@ -154,6 +175,7 @@ const LaptopDetail = () => {
     }
     const handleBuyNow = async () => {
         if(varientId) {
+            console.log(varientId);
             const result = await dispatch(insertCartItem({
                 quantity: 1,
                 productVariantId: varientId,
@@ -179,10 +201,9 @@ const LaptopDetail = () => {
                     <div className="main-image-container">
                         <Badge.Ribbon text="Mới" color="red" className={"ribbon"}>
                             <Image
+                                className="main-image"
                                 src={productDetail.product.images[selectedImage]?.url || banner1}
                                 alt={productDetail.product.name}
-                                className="main-image"
-                                preview={false}
                             />
                         </Badge.Ribbon>
                     </div>
@@ -191,11 +212,10 @@ const LaptopDetail = () => {
                         className="thumbnail-container"
                         style={{
                             display: 'flex',
-                            overflowX: 'auto',
-                            overflowY: 'hidden',
                             gap: '8px',
-                            maxWidth: '800px',
                             padding: '8px 0',
+                            overflowX: 'auto',
+                            maxWidth: '800px',
                         }}
                     >
                         {productDetail.product.images.map((image, index) => (
@@ -207,32 +227,35 @@ const LaptopDetail = () => {
                                     flex: '0 0 auto',
                                     width: '80px',
                                     height: '80px',
-                                    border: selectedImage === index
-                                        ? '2px solid #1890ff'
-                                        : '1px solid #ddd',
+                                    minWidth: '80px',
+                                    border: selectedImage === index ? '2px solid #1890ff' : '1px solid #ddd',
                                     borderRadius: '4px',
                                     cursor: 'pointer',
                                     overflow: 'hidden',
-                                    transition: 'all 0.3s'
+                                    position: 'relative',
+                                    backgroundColor: '#f5f5f5'
                                 }}
                             >
-                                <Image
+                                <img
                                     src={image.url}
                                     alt={`Thumbnail ${index + 1}`}
-                                    preview={false}
                                     style={{
                                         width: '100%',
                                         height: '100%',
-                                        objectFit: 'cover'
+                                        objectFit: 'cover',
+                                        display: 'block'
+                                    }}
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = 'data:image/svg+xml;base64,...'; // Ảnh fallback
                                     }}
                                 />
                             </div>
                         ))}
                     </div>
-
                     <div className="features-grid">
                         <Card className="feature-card">
-                            <CarOutlined className="feature-icon" />
+                            <CarOutlined className="feature-icon"/>
                             <Meta
                                 title="Giao hàng miễn phí"
                                 description="Trong 24 giờ"
@@ -240,7 +263,7 @@ const LaptopDetail = () => {
                             />
                         </Card>
                         <Card className="feature-card">
-                            <SafetyCertificateOutlined className="feature-icon" />
+                            <SafetyCertificateOutlined className="feature-icon"/>
                             <Meta
                                 title="Bảo hành 24 tháng"
                                 description="Chính hãng"
@@ -248,7 +271,7 @@ const LaptopDetail = () => {
                             />
                         </Card>
                         <Card className="feature-card">
-                            <ShareAltOutlined className="feature-icon" />
+                            <ShareAltOutlined className="feature-icon"/>
                             <Meta
                                 title="Đổi trả 30 ngày"
                                 description="Miễn phí"
@@ -272,7 +295,7 @@ const LaptopDetail = () => {
                         <div className="price-container">
                             <span className="current-price">{formatPrice(calculatePrice())}</span>
                             <span className="old-price">{formatPrice(calculatePrice() * 1.1)}</span>
-                            <Badge count="-10%" style={{ backgroundColor: '#f5222d' }} />
+                            <Badge count="-10%" style={{backgroundColor: '#f5222d'}}/>
                         </div>
                         <p className="product-description">
                             {productDetail.product.description}
@@ -286,10 +309,18 @@ const LaptopDetail = () => {
                             {productDetail.productOptions.map((option, index) => (
                                 <Card
                                     key={option.id}
-                                    className={`config-card-small ${selectedOption === index ? 'config-card-active' : ''}`}
-                                    onClick={() => {
-                                        setSelectedOption(index);
-                                        setOptionId(option.id);
+                                    className={`config-card-small ${option.id.toString() === optionId.toString() ? 'config-card-active' : ''}`}
+                                    onClick={async () => {
+                                        const newResponse = await fetchProductDetail(option.id);
+                                        if (newResponse) {
+                                            const selectedOptionIndex = newResponse.productOptions.findIndex(
+                                                opt => opt.id.toString() === option.id.toString()
+                                            );
+                                            if (selectedOptionIndex !== -1) {
+                                                setSelectedOption(selectedOptionIndex);
+                                            }
+                                            setOptionId(option.id);
+                                        }
                                     }}
                                     style={{ marginBottom: 16, position: 'relative' }}
                                 >

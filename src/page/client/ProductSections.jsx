@@ -1,51 +1,80 @@
-import React from 'react';
-import {Zap, Star, Clock, Heart} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, Star, Clock, Heart } from 'lucide-react';
 import '../style/ProductSections.css';
-import {Badge, Button, Card, Image, Tabs} from "antd";
-import source1 from "../../assets/gaming.jfif";
-import source2 from "../../assets/dh.jpg";
-import source3 from "../../assets/mongnhe.jpg";
-import source4 from "../../assets/vanphong.jpg";
+import { Badge, Button, Card, Image, Tabs, message } from "antd";
+import { useDispatch } from "react-redux";
+import { searchProducts } from "../../Redux/actions/ProductThunk";
+
 const ProductSections = () => {
-    // Flash Sale Products
-    const flashSaleProducts = [
-        { id: 1, name: "Laptop Gaming ABC XYZ i7-12700H RTX 3070 16GB 1TB", price: 24990000, oldPrice: 29990000, rating: 4.9, sold: 120, discount: 20 },
-        { id: 2, name: "Laptop Gaming DEF GHI i5-12500H RTX 3060 16GB 512GB", price: 18990000, oldPrice: 22990000, rating: 4.7, sold: 200, discount: 15 },
-        { id: 3, name: "Laptop Ultrabook KLM NOP i7-1260P Iris Xe 16GB 512GB", price: 22990000, oldPrice: 25990000, rating: 4.8, sold: 85, discount: 10 },
-        { id: 4, name: "Laptop Workstation QRS TUV i9-13900H RTX 4080 32GB 2TB", price: 44990000, oldPrice: 49990000, rating: 4.9, sold: 45, discount: 25 }
-    ];
-
-    // Featured Products
-    const bestsellerProducts = Array(8).fill().map((_, i) => ({
-        id: i+1,
-        name: `Laptop Gaming Model ${i+1} i7-12700H RTX 3070 16GB 1TB`,
-        price: 24990000 - (i * 1000000),
-        oldPrice: 29990000 - (i * 1000000),
-        rating: 4.9 - (i * 0.1),
-        sold: 120 + (i * 20)
-    }));
-
-    const newProducts = Array(8).fill().map((_, i) => ({
-        id: i+9,
-        name: `Laptop Gaming Mới Model ${i+9} i9-13900H RTX 4080 32GB 2TB`,
-        price: 34990000 - (i * 1500000),
-        rating: 4.8 - (i * 0.1),
-        sold: 50 + (i * 10)
-    }));
-
-    const trendingProducts = Array(8).fill().map((_, i) => ({
-        id: i+17,
-        name: `Laptop Gaming Xu Hướng Model ${i+17} i5-12500H RTX 3060 16GB 512GB`,
-        price: 19990000 - (i * 800000),
-        oldPrice: 22990000 - (i * 800000),
-        rating: 4.7 - (i * 0.1),
-        sold: 200 + (i * 30)
-    }));
+    const [flashSaleProducts, setFlashSaleProducts] = useState([]);
+    const [bestsellerProducts, setBestsellerProducts] = useState([]);
+    const [loading, setLoading] = useState({
+        flashSale: false,
+        bestseller: false,
+        new: false,
+        trending: false
+    });
+    const [error, setError] = useState(null);
+    const [timeRemaining, setTimeRemaining] = useState('24:00:00');
+    const dispatch = useDispatch();
 
     // Format price to VND
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
     };
+
+    // Calculate time remaining until midnight
+    const updateCountdown = () => {
+        const now = new Date();
+        const midnight = new Date();
+        midnight.setHours(24, 0, 0, 0);
+
+        const diff = midnight - now;
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setTimeRemaining(
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        );
+    };
+
+    // Fetch all products
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                // Fetch flash sale products
+                setLoading(prev => ({...prev, flashSale: true}));
+                const flashSaleResponse = await dispatch(searchProducts( {size: 4 }));
+                setFlashSaleProducts(flashSaleResponse?.content || []);
+
+                // Fetch bestseller products
+                setLoading(prev => ({...prev, bestseller: true}));
+                const bestsellerResponse = await dispatch(searchProducts( {size: 8 }));
+                setBestsellerProducts(bestsellerResponse?.content || []);
+
+
+            } catch (err) {
+                setError("Lỗi khi tải dữ liệu sản phẩm");
+                message.error("Lỗi khi tải dữ liệu sản phẩm");
+            } finally {
+                setLoading({
+                    flashSale: false,
+                    bestseller: false,
+                    new: false,
+                    trending: false
+                });
+            }
+        };
+
+        fetchProducts();
+
+        updateCountdown();
+        const timer = setInterval(updateCountdown, 1000);
+
+        return () => clearInterval(timer);
+    }, [dispatch]);
 
     return (
         <>
@@ -55,55 +84,75 @@ const ProductSections = () => {
                     <div className="section-header">
                         <div className="title-wrapper">
                             <Zap className="flash-icon" />
-                            <h2 className="section-title">Flash Sale</h2>
+                            <h2 className="section-title-home">Flash Sale</h2>
                         </div>
                         <div className="countdown-timer">
                             <Clock className="timer-icon" />
                             <span>Kết thúc sau:</span>
-                            <span className="time-remaining">12:34:56</span>
+                            <span className="time-remaining">{timeRemaining}</span>
                         </div>
                     </div>
 
-                    <div className="products-grid">
-                        {flashSaleProducts.map((product) => (
-                            <Card key={product.id} className="product-card">
-                                <div className="image-container">
-                                    <Badge className="discount-badge">-{product.discount}%</Badge>
-                                    <Image
-                                        src={source1}
-                                        preview={false}
-                                        alt={product.name}
-                                        width={300}
-                                        height={200}
-                                        className="product-image"
-                                        onError={(e) => {
-                                            e.target.src = '/products/default-laptop.jpg';
-                                            e.target.onerror = null;
-                                        }}
-                                    />
-                                </div>
-                                <Card className="product-content">
-                                    <h3 className="product-name">{product.name}</h3>
-                                    <div className="price-container">
-                                        <span className="current-price">{formatPrice(product.price)}</span>
-                                        <span className="old-price">{formatPrice(product.oldPrice)}</span>
+                    {loading.flashSale ? (
+                        <div className="loading-container">Đang tải sản phẩm flash sale...</div>
+                    ) : error ? (
+                        <div className="error-container">{error}</div>
+                    ) : (
+                        <div className="products-grid">
+                            {flashSaleProducts.slice(0, 4).map((product) => (
+                                <Card key={product.id} className="product-card"
+                                      onClick={() => window.location.href = `/products/${product.id}`}
+                                >
+                                    <div className="image-container">
+                                        {product.discountPercentage && (
+                                            <Badge className="discount-badge">-{Math.round(product.discountPercentage)}%</Badge>
+                                        )}
+                                        <Image
+                                            src={product.productVariant.imageUrl || '/products/default-laptop.jpg'}
+                                            preview={false}
+                                            alt={product.name}
+                                            width={300}
+                                            height={200}
+                                            className="product-image"
+                                            onError={(e) => {
+                                                e.target.src = '/products/default-laptop.jpg';
+                                                e.target.onerror = null;
+                                            }}
+                                        />
                                     </div>
-                                    <div className="rating-container">
-                                        <div className="rating">
-                                            <Star className="star-icon" />
-                                            <span>{product.rating}</span>
+                                    <Card className="product-content">
+                                        <h3 className="product-name">
+                                            {product.name}  {product.code}  {product.cpu}  {product.gpu}  {product.ram}
+                                        </h3>
+
+                                        <div className="price-container-home">
+                                            <span className="current-price-home">
+                                                {formatPrice(product.price || 0)}
+                                            </span>
+                                            <span className="old-price-home">
+                                                    {formatPrice(product.price + 500000)}
+                                                </span>
                                         </div>
-                                        <span className="divider">|</span>
-                                        <span className="sold">Đã bán {product.sold}+</span>
-                                    </div>
-                                    <Button className="add-to-cart-button">Thêm vào giỏ</Button>
+                                        <div className="rating-container">
+                                            <div className="rating">
+                                                <Star className="star-icon"/>
+                                                <span>{product.ratingAverage?.toFixed(1) || '5.0'}</span>
+                                            </div>
+                                            <span className="divider">|</span>
+                                            <span className="sold">Đã bán {product.salesCount || 0}+</span>
+                                        </div>
+                                    </Card>
                                 </Card>
-                            </Card>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="view-all-container">
-                        <Button variant="outline" className="view-all-button">
+                        <Button
+                            variant="outline"
+                            className="view-all-button"
+                            onClick={() => window.location.href = '/flash-sale'}
+                        >
                             Xem tất cả
                         </Button>
                     </div>
@@ -113,71 +162,54 @@ const ProductSections = () => {
             {/* Featured Products Section */}
             <section className="featured-products-section">
                 <div className="container">
-                    <Tabs defaultValue="bestseller" className="tabs-container">
-                        <div className="tabs-header">
-                            <h2 className="section-title">Sản Phẩm Nổi Bật</h2>
-                            <Tabs
-                                defaultActiveKey="bestseller"
-                                items={[
-                                    {
-                                        key: 'bestseller',
-                                        label: 'Bán chạy',
-                                        children: <div>Hiển thị sản phẩm bán chạy</div>,
-                                    },
-                                    {
-                                        key: 'new',
-                                        label: 'Mới nhất',
-                                        children: <div>Hiển thị sản phẩm mới nhất</div>,
-                                    },
-                                    {
-                                        key: 'trending',
-                                        label: 'Xu hướng',
-                                        children: <div>Hiển thị sản phẩm xu hướng</div>,
-                                    },
-                                ]}
-                            />
-
-                        </div>
-
-                        <Tabs value="bestseller" className="tab-content">
-                            <div className="products-grid">
-                                {bestsellerProducts.map((product) => (
-                                    <Card key={product.id} className="product-card">
-                                        <div className="image-container">
-                                            <Image
-                                                src={source3}
-                                                alt={product.name}
-                                                width={300}
-                                                preview={false}
-                                                height={200}
-                                                className="product-image"
-                                            />
+                    <div className="tabs-header">
+                        <h2 className="section-title">Sản Phẩm Nổi Bật</h2>
+                    </div>
+                    <div className="products-grid">
+                        {bestsellerProducts.slice(0, 8).map((product) => (
+                            <Card key={product.id} className="product-card"
+                                  onClick={() => window.location.href = `/products/${product.id}`}
+                            >
+                                <div className="image-container">
+                                    <Image
+                                        src={product.productVariant.imageUrl || '/products/default-laptop.jpg'}
+                                        alt={product.name}
+                                        width={300}
+                                        preview={false}
+                                        height={200}
+                                        className="product-image"
+                                    />
+                                </div>
+                                <Card bordered={false} className="product-content">
+                                    {product.name}  {product.code}  {product.cpu}  {product.gpu}  {product.ram}
+                                    <div className="price-container-home">
+                                                    <span className="current-price-home">
+                                                        {formatPrice(product?.price || 0)}
+                                                    </span>
+                                            <span className="old-price-home">
+                                                            {formatPrice(product.price)}
+                                                        </span>
+                                    </div>
+                                    <div className="rating-container">
+                                        <div className="rating">
+                                            <Star className="star-icon"/>
+                                            <span>{product.ratingAverage?.toFixed(1) || '5.0'}</span>
                                         </div>
-                                        <Card bordered={false} className="product-content">
-                                            <h3 className="product-name">{product.name}</h3>
-                                            <div className="price-container">
-                                                <span className="current-price">{formatPrice(product.price)}</span>
-                                                <span className="old-price">{formatPrice(product.oldPrice)}</span>
-                                            </div>
-                                            <div className="rating-container">
-                                                <div className="rating">
-                                                    <Star className="star-icon" />
-                                                    <span>{product.rating.toFixed(1)}</span>
-                                                </div>
-                                                <span className="divider">|</span>
-                                                <span className="sold">Đã bán {product.sold}+</span>
-                                            </div>
-                                            <Button className="add-to-cart-button">Thêm vào giỏ</Button>
-                                        </Card>
-                                    </Card>
-                                ))}
-                            </div>
-                        </Tabs>
-
-                    </Tabs>
+                                        <span className="divider">|</span>
+                                        <span className="sold">Đã bán {product.salesCount || 0}+</span>
+                                    </div>
+                                </Card>
+                            </Card>
+                        ))}
+                    </div>
 
                     <div className="view-all-container">
-                        <Button variant="outline" size="lg" className="view-all-button">
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            className="view-all-button"
+                            onClick={() => window.location.href = '/search'}
+                        >
                             Xem tất cả sản phẩm
                         </Button>
                     </div>

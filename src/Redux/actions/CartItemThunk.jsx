@@ -118,3 +118,24 @@ export const insertCartItem = ({ quantity, productVariantId, userId }) => async 
         }
     }
 };
+export const totalCartItem = (id) => async (dispatch) => {
+    try {
+        const res = await cartItemService.totalCartItemById(id);
+
+        if (res && res.code === 200) {
+            dispatch({
+                type: "TOTAL_CART_ITEM",
+                payload: res.data,
+            });
+        } else {
+            console.log("No cart data found.");
+        }
+        return res.data;
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error("API Error:", error.response.data.message);
+        } else {
+            console.error("Unexpected error:", error.message);
+        }
+    }
+};

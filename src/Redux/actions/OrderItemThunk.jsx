@@ -32,3 +32,30 @@ export const insertOrder = (body) => async (dispatch) => {
         throw error; // Rất quan trọng nếu phía gọi muốn biết lỗi
     }
 };
+export const getAllHistoryOrder = (page,size,orderStatus,sort,userId) => async (dispatch) => {
+    try {
+
+        const response = await orderItemService.historyOrders({page,size,orderStatus,sort},userId);
+
+        if (response.data) {
+            dispatch({
+                type: "HISTORY_ORDER",
+                payload: response.data,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu order.");
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi gửi đơn hàng:");
+
+        if (error.response?.data?.message) {
+            console.error("🧨 API Error:", error.response.data.message);
+        } else {
+            console.error("🧨 Lỗi không xác định:", error.message);
+        }
+
+        throw error; // Rất quan trọng nếu phía gọi muốn biết lỗi
+    }
+};

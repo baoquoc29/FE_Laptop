@@ -1,119 +1,21 @@
-import React, { useState } from "react"
-import { ChevronDown, ChevronUp, Laptop, Package, Search, ShoppingBag, Truck, User } from "lucide-react"
-import { Link, useNavigate } from 'react-router-dom';
-import "../style/PurchaseHistory.css"
-import {Pagination} from "antd";
-
-// Mock data for purchase history
-const orders = [
-    {
-        id: "ORD-2023-1234",
-        date: new Date(2023, 4, 15),
-        status: "delivered",
-        total: 25990000,
-        items: [
-            {
-                id: 1,
-                name: "MacBook Pro M2",
-                price: 25990000,
-                quantity: 1,
-                image: "/placeholder.svg?height=80&width=120",
-            },
-        ],
-    },
-    {
-        id: "ORD-2023-1235",
-        date: new Date(2023, 4, 16),
-        status: "shipped",
-        total: 25990000,
-        items: [
-            {
-                id: 1,
-                name: "MacBook Pro M2",
-                price: 25990000,
-                quantity: 1,
-                image: "/placeholder.svg?height=80&width=120",
-            },
-        ],
-    },
-    {
-        id: "ORD-2023-1236",
-        date: new Date(2023, 4, 17),
-        status: "processing",
-        total: 25990000,
-        items: [
-            {
-                id: 1,
-                name: "MacBook Pro M2",
-                price: 25990000,
-                quantity: 1,
-                image: "/placeholder.svg?height=80&width=120",
-            },
-        ],
-    },
-    {
-        id: "ORD-2023-1237",
-        date: new Date(2023, 4, 18),
-        status: "delivered",
-        total: 25990000,
-        items: [
-            {
-                id: 1,
-                name: "MacBook Pro M2",
-                price: 25990000,
-                quantity: 1,
-                image: "/placeholder.svg?height=80&width=120",
-            },
-        ],
-    },
-    {
-        id: "ORD-2023-1238",
-        date: new Date(2023, 4, 19),
-        status: "cancelled",
-        total: 25990000,
-        items: [
-            {
-                id: 1,
-                name: "MacBook Pro M2",
-                price: 25990000,
-                quantity: 1,
-                image: "/placeholder.svg?height=80&width=120",
-            },
-        ],
-    },
-    {
-        id: "ORD-2023-1239",
-        date: new Date(2023, 4, 20),
-        status: "delivered",
-        total: 25990000,
-        items: [
-            {
-                id: 1,
-                name: "MacBook Pro M2",
-                price: 25990000,
-                quantity: 1,
-                image: "/placeholder.svg?height=80&width=120",
-            },
-        ],
-    },
-    {
-        id: "ORD-2023-1240",
-        date: new Date(2023, 4, 21),
-        status: "shipped",
-        total: 25990000,
-        items: [
-            {
-                id: 1,
-                name: "MacBook Pro M2",
-                price: 25990000,
-                quantity: 1,
-                image: "/placeholder.svg?height=80&width=120",
-            },
-        ],
-    }
-];
+import React, { useState, useEffect, useMemo } from "react";
+import { ChevronDown, ChevronUp, Search, ShoppingBag, Package, Truck } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { Pagination, Spin, Input, Select } from "antd";
+import { useDispatch, useSelector } from 'react-redux';
+import { getAllHistoryOrder } from "../../Redux/actions/OrderItemThunk";
+import "../style/PurchaseHistory.css";
 
 const PurchaseHistory = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const { orders, loading, error } = useSelector(state => state.OrderReducer);
+
+    const [userData] = useState(() => {
+        const savedUser = localStorage.getItem('USER_LOGIN');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -121,25 +23,61 @@ const PurchaseHistory = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 5;
 
-    const filteredOrders = orders
-        .filter((order) => {
-            const matchesSearch =
-                order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.items.some((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
-            const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-            return matchesSearch && matchesStatus;
-        })
-        .sort((a, b) => {
-            return sortOrder === "newest"
-                ? b.date.getTime() - a.date.getTime()
-                : a.date.getTime() - b.date.getTime();
-        });
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const apiStatus = statusFilter === "all" ? null : statusFilter.toUpperCase();
+                await dispatch(getAllHistoryOrder(
+                    currentPage - 1,
+                    ordersPerPage,
+                    apiStatus,
+                    sortOrder === "newest" ? "desc" : "asc",
+                    userData?.id
+                ));
+            } catch (err) {
+                console.error("Failed to fetch orders:", err);
+            }
+        };
 
-    // Get current orders
-    const indexOfLastOrder = currentPage * ordersPerPage;
-    const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-    const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-    const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+        fetchOrders();
+    }, [currentPage, statusFilter, sortOrder, dispatch, userData?.id]);
+
+    // Transform orders and add frontend search filtering
+    const filteredOrders = useMemo(() => {
+        if (!orders?.content) return [];
+
+        let result = orders.content.map(order => ({
+            id: `ORD-${order.orderId}`,
+            date: new Date(order.createdAt || Date.now()),
+            status: order.orderStatus,
+            total: order.orderItems.reduce((sum, item) => sum + (item.priceAtOrderTime * item.quantity), 0) - (order.discount || 0),
+            items: order.orderItems.map(item => ({
+                id: item.orderItemId,
+                name: item.productName,
+                price: item.priceAtOrderTime,
+                quantity: item.quantity,
+                image: item.productImage,
+                color: item.productColor,
+                code: item.productCode
+            }))
+        }));
+
+        // Frontend search filtering
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            result = result.filter(order =>
+                order.id.toLowerCase().includes(term) ||
+                order.items.some(item =>
+                    item.name.toLowerCase().includes(term) ||
+                    item.code.toLowerCase().includes(term)
+                )
+            );
+        }
+
+        return result;
+    }, [orders, searchTerm]);
+
+    const totalPages = orders?.totalPages || 1;
 
     const toggleOrderExpand = (orderId) => {
         setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -151,232 +89,247 @@ const PurchaseHistory = () => {
 
     const StatusBadge = ({ status }) => {
         const statusConfig = {
-            processing: { label: "Đang xử lý", className: "status-badge processing" },
-            shipped: { label: "Đang giao hàng", className: "status-badge shipped" },
-            delivered: { label: "Đã giao hàng", className: "status-badge delivered" },
-            cancelled: { label: "Đã hủy", className: "status-badge cancelled" },
+            PENDING: { label: "Chờ xác nhận", className: "status-badge pending" },
+            CONFIRMED: { label: "Đã xác nhận", className: "status-badge confirmed" },
+            SHIPPED: { label: "Đang giao hàng", className: "status-badge shipped" },
+            COMPLETED: { label: "Hoàn thành", className: "status-badge completed" },
+            CANCELLED: { label: "Đã hủy", className: "status-badge cancelled" },
         };
 
-        const config = statusConfig[status] || statusConfig.processing;
-
+        const config = statusConfig[status] || statusConfig.PENDING;
         return <span className={config.className}>{config.label}</span>;
     };
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
-        setExpandedOrder(null); // Close any expanded order when changing pages
+        setExpandedOrder(null);
     };
 
+    if (loading) {
+        return (
+            <div className="loading-container">
+                <Spin size="large" />
+                <p>Đang tải lịch sử mua hàng...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="error-container">
+                <div className="error-message">
+                    <h3>Đã xảy ra lỗi</h3>
+                    <p>{error.message || "Không thể tải lịch sử mua hàng"}</p>
+                    <button
+                        className="retry-button"
+                        onClick={() => window.location.reload()}
+                    >
+                        Thử lại
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="purchase">
-            <main className="main-content">
-                <div className="container-history">
-                    <h1 className="page-title">Lịch sử mua hàng</h1>
+        <div className="purchase-history-container">
+            <div className="purchase-history-header">
+                <h1>Lịch sử mua hàng</h1>
+                <div className="history-controls">
+                    <div className="search-container">
+                        <Input
+                            placeholder="Tìm kiếm đơn hàng..."
+                            prefix={<Search size={16} />}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            allowClear
+                        />
+                    </div>
+                    <Select
+                        className="sort-select"
+                        value={sortOrder}
+                        onChange={(value) => {
+                            setSortOrder(value);
+                            setCurrentPage(1);
+                        }}
+                        options={[
+                            { value: "newest", label: "Mới nhất" },
+                            { value: "oldest", label: "Cũ nhất" }
+                        ]}
+                    />
+                </div>
+            </div>
 
-                    <div className="tabs-container">
-                        <div className="tabs-header">
-                            <div className="tabs">
-                                <button
-                                    className={`tab ${statusFilter === "all" ? "active" : ""}`}
-                                    onClick={() => {
-                                        setStatusFilter("all");
-                                        setCurrentPage(1); // Reset to first page when changing filters
-                                    }}
+            <div className="status-tabs">
+                {["all", "PENDING", "CONFIRMED", "SHIPPED", "COMPLETED", "CANCELLED"].map((status) => (
+                    <button
+                        key={status}
+                        className={`status-tab ${statusFilter === status ? "active" : ""}`}
+                        onClick={() => {
+                            setStatusFilter(status);
+                            setCurrentPage(1);
+                        }}
+                    >
+                        {status === "all" ? "Tất cả" :
+                            status === "PENDING" ? "Chờ xác nhận" :
+                                status === "CONFIRMED" ? "Đã xác nhận" :
+                                    status === "SHIPPED" ? "Đang giao" :
+                                        status === "COMPLETED" ? "Hoàn thành" : "Đã hủy"}
+                    </button>
+                ))}
+            </div>
+
+            <div className="orders-list-container">
+                {filteredOrders.length === 0 ? (
+                    <div className="empty-state">
+                        <ShoppingBag size={48} className="empty-icon" />
+                        <p className="empty-text">Không tìm thấy đơn hàng nào</p>
+                        <button
+                            className="continue-shopping-btn"
+                            onClick={() => navigate('/')}
+                        >
+                            Tiếp tục mua sắm
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        {filteredOrders.map((order) => (
+                            <div key={order.id} className="order-card">
+                                <div
+                                    className="order-summary"
+                                    onClick={() => toggleOrderExpand(order.id)}
                                 >
-                                    Tất cả
-                                </button>
-                                <button
-                                    className={`tab ${statusFilter === "processing" ? "active" : ""}`}
-                                    onClick={() => {
-                                        setStatusFilter("processing");
-                                        setCurrentPage(1);
-                                    }}
-                                >
-                                    Đang xử lý
-                                </button>
-                                <button
-                                    className={`tab ${statusFilter === "shipped" ? "active" : ""}`}
-                                    onClick={() => {
-                                        setStatusFilter("shipped");
-                                        setCurrentPage(1);
-                                    }}
-                                >
-                                    Đang giao
-                                </button>
-                                <button
-                                    className={`tab ${statusFilter === "delivered" ? "active" : ""}`}
-                                    onClick={() => {
-                                        setStatusFilter("delivered");
-                                        setCurrentPage(1);
-                                    }}
-                                >
-                                    Đã giao
-                                </button>
-                            </div>
-
-                            <div className="controls">
-                                <div className="search-container-history">
-                                    <Search className="search-icon-history" />
-                                    <input
-                                        type="text"
-                                        placeholder="Tìm kiếm đơn hàng..."
-                                        className="search-input-history"
-                                        value={searchTerm}
-                                        onChange={(e) => {
-                                            setSearchTerm(e.target.value);
-                                            setCurrentPage(1); // Reset to first page when searching
-                                        }}
-                                    />
-                                </div>
-
-                                <select
-                                    className="sort-select"
-                                    value={sortOrder}
-                                    onChange={(e) => {
-                                        setSortOrder(e.target.value);
-                                        setCurrentPage(1); // Reset to first page when changing sort order
-                                    }}
-                                >
-                                    <option value="newest">Mới nhất</option>
-                                    <option value="oldest">Cũ nhất</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="tab-content-">
-                            {filteredOrders.length === 0 ? (
-                                <div className="empty-state">
-                                    <ShoppingBag className="empty-icon" />
-                                    <p className="empty-text">Không tìm thấy đơn hàng nào</p>
-                                    <button className="primary-button">Tiếp tục mua sắm</button>
-                                </div>
-                            ) : (
-                                <div className="orders-list">
-                                    {currentOrders.map((order) => (
-                                        <div key={order.id} className="order-card">
-                                            <div
-                                                className="order-summary"
-                                                onClick={() => toggleOrderExpand(order.id)}
-                                            >
-                                                <div className="order-info">
-                                                    <div className="order-meta">
-                                                        <p className="order-id">{order.id}</p>
-                                                        <p className="order-date">
-                                                            {new Intl.DateTimeFormat("vi-VN").format(order.date)}
-                                                        </p>
-                                                    </div>
-                                                    <StatusBadge status={order.status}/>
-                                                </div>
-                                                <div className="order-amount">
-                                                    <div className="amount-details">
-                                                        <p className="total-history">{formatPrice(order.total)}</p>
-                                                        <p className="items-count">{order.items.length} sản phẩm</p>
-                                                    </div>
-                                                    {expandedOrder === order.id ? (
-                                                        <ChevronUp className="chevron"/>
-                                                    ) : (
-                                                        <ChevronDown className="chevron"/>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {expandedOrder === order.id && (
-                                                <div className="order-details">
-                                                    <div className="details-section">
-                                                        <h3 className="section-title-history">Chi tiết đơn hàng</h3>
-                                                        <div className="details-grid">
-                                                            <div className="detail-item">
-                                                                <p className="detail-label">Ngày đặt hàng</p>
-                                                                <p>{new Intl.DateTimeFormat("vi-VN").format(order.date)}</p>
-                                                            </div>
-                                                            <div className="detail-item">
-                                                                <p className="detail-label">Trạng thái</p>
-                                                                <StatusBadge status={order.status}/>
-                                                            </div>
-                                                            <div className="detail-item">
-                                                                <p className="detail-label">Mã đơn hàng</p>
-                                                                <p>{order.id}</p>
-                                                            </div>
-                                                            <div className="detail-item">
-                                                                <p className="detail-label">Tổng tiền</p>
-                                                                <p className="detail-value">{formatPrice(order.total)}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="products-section">
-                                                        <h3 className="section-title-history">Sản phẩm</h3>
-                                                        <div className="products-list">
-                                                            {order.items.map((item) => (
-                                                                <div key={item.id} className="product-item">
-                                                                    <div className="product-image-container">
-                                                                        <img
-                                                                            src={item.image || "/placeholder.svg"}
-                                                                            alt={item.name}
-                                                                            className="product-image"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="product-info">
-                                                                        <p className="product-name">{item.name}</p>
-                                                                        <p className="product-quantity">Số
-                                                                            lượng: {item.quantity}</p>
-                                                                    </div>
-                                                                    <div className="product-price">
-                                                                        {formatPrice(item.price)}
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="order-actions">
-                                                        <div className="status-info">
-                                                            {order.status === "processing" && (
-                                                                <div className="status-message processing">
-                                                                    <Package className="status-icon"/>
-                                                                    <span>Đang chuẩn bị hàng</span>
-                                                                </div>
-                                                            )}
-                                                            {order.status === "shipped" && (
-                                                                <div className="status-message shipped">
-                                                                    <Truck className="status-icon"/>
-                                                                    <span>Đang vận chuyển</span>
-                                                                </div>
-                                                            )}
-                                                            {order.status === "delivered" && (
-                                                                <div className="status-message delivered">
-                                                                    <Package className="status-icon"/>
-                                                                    <span>Đã giao hàng thành công</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="action-buttons">
-                                                            {order.status === "delivered" && (
-                                                                <button className="secondary-button-history">Mua lại</button>
-                                                            )}
-                                                            <button className="secondary-button-history">Chi tiết</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+                                    <div className="order-meta">
+                                        <div className="order-id-date">
+                                            <span className="order-id">{order.id}</span>
+                                            <span className="order-date">
+                                                {new Intl.DateTimeFormat("vi-VN").format(order.date)}
+                                            </span>
                                         </div>
-                                    ))}
-
-                                    <div className="pagination-container">
-                                        <Pagination
-                                            current={currentPage}
-                                            total={orders.length}
-                                            pageSize={5}
-                                            onChange={handlePageChange}
-                                            showSizeChanger={false}
-                                        />
+                                        <StatusBadge status={order.status} />
+                                    </div>
+                                    <div className="order-amount">
+                                        <span className="total-amount">{formatPrice(order.total)}</span>
+                                        <span className="items-count">{order.items.length} sản phẩm</span>
+                                        {expandedOrder === order.id ? (
+                                            <ChevronUp className="chevron-icon" />
+                                        ) : (
+                                            <ChevronDown className="chevron-icon" />
+                                        )}
                                     </div>
                                 </div>
+
+                                {expandedOrder === order.id && (
+                                    <div className="order-details-expanded">
+                                        <div className="order-details-section">
+                                            <h3>Chi tiết đơn hàng</h3>
+                                            <div className="details-grid">
+                                                <div className="detail-item">
+                                                    <span className="detail-label">Ngày đặt hàng:</span>
+                                                    <span>{new Intl.DateTimeFormat("vi-VN").format(order.date)}</span>
+                                                </div>
+                                                <div className="detail-item">
+                                                    <span className="detail-label">Trạng thái:</span>
+                                                    <StatusBadge status={order.status} />
+                                                </div>
+                                                <div className="detail-item">
+                                                    <span className="detail-label">Mã đơn hàng:</span>
+                                                    <span>{order.id}</span>
+                                                </div>
+                                                <div className="detail-item">
+                                                    <span className="detail-label">Tổng tiền:</span>
+                                                    <span className="detail-value">{formatPrice(order.total)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="products-section">
+                                            <h3>Sản phẩm</h3>
+                                            <div className="products-list">
+                                                {order.items.map((item) => (
+                                                    <div key={item.id} className="product-item">
+                                                        <div className="product-image-container">
+                                                            <img
+                                                                src={item.image}
+                                                                alt={item.name}
+                                                                className="product-image"
+                                                                onError={(e) => {
+                                                                    e.target.src = "/placeholder.svg";
+                                                                    e.target.onerror = null;
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className="product-info">
+                                                            <h4 className="product-name">{item.name}</h4>
+                                                            <p className="product-code">Mã: {item.code}</p>
+                                                            <p className="product-quantity">Số lượng: {item.quantity}</p>
+                                                            <p className="product-color">Màu: {item.color}</p>
+                                                        </div>
+                                                        <div className="product-price">
+                                                            {formatPrice(item.price * item.quantity)}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="order-actions">
+                                            <div className="status-info">
+                                                {order.status === "PENDING" && (
+                                                    <div className="status-message pending">
+                                                        <Package size={20} />
+                                                        <span>Đang chờ xác nhận</span>
+                                                    </div>
+                                                )}
+                                                {order.status === "CONFIRMED" && (
+                                                    <div className="status-message confirmed">
+                                                        <Package size={20} />
+                                                        <span>Đã xác nhận - Đang chuẩn bị hàng</span>
+                                                    </div>
+                                                )}
+                                                {order.status === "SHIPPED" && (
+                                                    <div className="status-message shipped">
+                                                        <Truck size={20} />
+                                                        <span>Đang vận chuyển</span>
+                                                    </div>
+                                                )}
+                                                {order.status === "COMPLETED" && (
+                                                    <div className="status-message completed">
+                                                        <Package size={20} />
+                                                        <span>Đã giao hàng thành công</span>
+                                                    </div>
+                                                )}
+                                                {order.status === "CANCELLED" && (
+                                                    <div className="status-message cancelled">
+                                                        <Package size={20} />
+                                                        <span>Đơn hàng đã bị hủy</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="action-buttons">
+                                                {order.status === "COMPLETED" && (
+                                                    <button className="secondary-button">Mua lại</button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
+                            </div>
+                        ))}
+
+                        <div className="pagination-wrapper">
+                            <Pagination
+                                current={currentPage}
+                                total={orders?.totalElements || 0}
+                                pageSize={ordersPerPage}
+                                onChange={handlePageChange}
+                                showSizeChanger={false}
+                                showQuickJumper
+                            />
                         </div>
-                    </div>
-                </div>
-            </main>
+                    </>
+                )}
+            </div>
         </div>
     );
 };

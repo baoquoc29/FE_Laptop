@@ -116,31 +116,12 @@
     color: var(--text-color);
 }
 
-.search-container {
-    flex: 1;
-    max-width: 600px;
-    margin: 0 20px;
-}
 
 .search-wrapper {
     position: relative;
     width: 100%;
 }
 
-.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--light-text);
-}
-
-.search-input {
-    width: 100%;
-    padding-left: 40px;
-    border-radius: 20px;
-    height: 40px;
-}
 
 .header-right {
     display: flex;

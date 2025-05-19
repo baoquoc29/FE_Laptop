@@ -37,7 +37,7 @@ export const check = (body) => async (dispatch) => {
         if (res && res.data && res.data.amount) {
             dispatch({
                 type: "RESULT_CHECK",
-                payload: res.data, // Đảm bảo trả về dữ liệu có key 'amount'
+                payload: res, // Đảm bảo trả về dữ liệu có key 'amount'
             });
             return res;
         } else {

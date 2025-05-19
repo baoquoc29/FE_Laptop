@@ -95,6 +95,7 @@ const CheckoutConfirmation = () => {
         try {
             // Tạo danh sách sản phẩm
             const orderProductRequestList = cartItems.map(item => ({
+                idCartItem : item.id,
                 productVariantId: item.variantId,
                 quantity: item.quantity,
                 productCode: item.productCode,
@@ -103,16 +104,15 @@ const CheckoutConfirmation = () => {
                 priceAtOrderTime: item.basePrice,
                 productColor: item.color
             }));
-
             const orderData = {
                 userId: userData?.id,
-                discountId: voucher.id,
+                discountId: voucher?.id || -1,
                 detailAddress: formData.address,
                 fullName: formData.fullName,
                 phoneNumber: formData.phone,
                 email: formData.email,
                 wardId: formData.ward,
-                discount: formData.discount || 0,
+                discount: cartDiscount || 0,
                 paymentMethod: formData.paymentMethod,
                 note: formData.notes,
                 orderProductRequestList: orderProductRequestList

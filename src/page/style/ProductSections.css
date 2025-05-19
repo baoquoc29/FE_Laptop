@@ -23,14 +23,14 @@
     height: 1.5rem;
 }
 
-.section-title {
+.section-title-home {
     font-size: 1.75rem;
     font-weight: 700;
     line-height: 1.2;
 }
 
 @media (min-width: 768px) {
-    .section-title {
+    .section-title-home {
         font-size: 2rem;
     }
 }
@@ -183,20 +183,21 @@
     overflow: hidden;
 }
 
-.price-container {
+.price-container-home {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-top: 20px;
     margin-bottom: 0.5rem;
 }
 
-.current-price {
+.current-price-home {
     font-size: 1.125rem;
     font-weight: 700;
     color: #e11d48;
 }
 
-.old-price {
+.old-price-home {
     font-size: 0.875rem;
     color: #94a3b8;
     text-decoration: line-through;

@@ -28,10 +28,11 @@ const HomeScreen = () => {
     const toggleChatBox = () => {
         setShowChatBox(!showChatBox);
     };
-
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
     return (
         <div className="home-screen-container">
-            <NavigationHeader></NavigationHeader>
             <HeroSection></HeroSection>
             <FeaturedCategories></FeaturedCategories>
             <ProductSections></ProductSections>

@@ -98,16 +98,16 @@ const Features = () => {
     ];
 
     return (
-        <section className="features-section">
-            <div className="features-container">
-                <div className="features-grid">
+        <section className="features-section-home">
+            <div className="features-container-home">
+                <div className="features-grid-home">
                     {features.map((feature, index) => (
-                        <div key={index} className="feature-card">
-                            <div className="feature-icon-container">
+                        <div key={index} className="feature-card-home">
+                            <div className="feature-icon-container-home-x">
                                 {feature.icon}
                             </div>
-                            <h3 className="feature-title">{feature.title}</h3>
-                            <p className="feature-description">{feature.description}</p>
+                            <h3 className="feature-title-home">{feature.title}</h3>
+                            <p className="feature-description-home">{feature.description}</p>
                         </div>
                     ))}
                 </div>

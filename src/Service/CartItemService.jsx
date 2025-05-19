@@ -31,5 +31,8 @@ export class CartItemService extends baseService {
     insertCartItem = (body) => {
         return  this.post('api/v1/cart/insert',body)
     }
+    totalCartItemById = (id) => {
+        return  this.get(`api/v1/cart/total/${id}`,true)
+    }
 }
 export const cartItemService = new CartItemService ();
