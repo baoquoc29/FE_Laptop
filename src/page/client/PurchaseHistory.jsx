@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, {useState, useEffect, useMemo, useContext} from "react";
 import { ChevronDown, ChevronUp, Search, ShoppingBag, Package, Truck } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Pagination, Spin, Input, Select } from "antd";
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllHistoryOrder } from "../../Redux/actions/OrderItemThunk";
+import {getAllHistoryOrder, refundOrder} from "../../Redux/actions/OrderItemThunk";
 import "../style/PurchaseHistory.css";
+import {NotificationContext} from "../../components/NotificationProvider";
 
 const PurchaseHistory = () => {
     const dispatch = useDispatch();
@@ -22,7 +23,7 @@ const PurchaseHistory = () => {
     const [sortOrder, setSortOrder] = useState("newest");
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 5;
-
+    const notification = useContext(NotificationContext);
     useEffect(() => {
         const fetchOrders = async () => {
             try {
@@ -50,6 +51,7 @@ const PurchaseHistory = () => {
             id: `ORD-${order.orderId}`,
             date: new Date(order.createdAt || Date.now()),
             status: order.orderStatus,
+            paymentStatus: order.paymentStatus,
             total: order.orderItems.reduce((sum, item) => sum + (item.priceAtOrderTime * item.quantity), 0) - (order.discount || 0),
             items: order.orderItems.map(item => ({
                 id: item.orderItemId,
@@ -94,6 +96,7 @@ const PurchaseHistory = () => {
             SHIPPED: { label: "Đang giao hàng", className: "status-badge shipped" },
             COMPLETED: { label: "Hoàn thành", className: "status-badge completed" },
             CANCELLED: { label: "Đã hủy", className: "status-badge cancelled" },
+
         };
 
         const config = statusConfig[status] || statusConfig.PENDING;
@@ -104,7 +107,20 @@ const PurchaseHistory = () => {
         setCurrentPage(pageNumber);
         setExpandedOrder(null);
     };
-
+    const handleReturnRequest =  async  (id) => {
+        const idNumber = id.substring(4);
+        const res = await dispatch(refundOrder(idNumber));
+        if(res.code === 200){
+            window.location.reload();
+        }
+        else{
+            notification.warning({
+                message: 'Cảnh báo',
+                description: 'Đã xảy ra lỗi!',
+                placement: 'topRight',
+            });
+        }
+    }
     if (loading) {
         return (
             <div className="loading-container">
@@ -299,7 +315,7 @@ const PurchaseHistory = () => {
                                                         <span>Đã giao hàng thành công</span>
                                                     </div>
                                                 )}
-                                                {order.status === "CANCELLED" && (
+                                                {order.status === "CANCELLED" && order.paymentStatus === "REFUNDED" && (
                                                     <div className="status-message cancelled">
                                                         <Package size={20} />
                                                         <span>Đơn hàng đã bị hủy</span>
@@ -307,8 +323,33 @@ const PurchaseHistory = () => {
                                                 )}
                                             </div>
                                             <div className="action-buttons">
-                                                {order.status === "COMPLETED" && (
-                                                    <button className="secondary-button">Mua lại</button>
+                                                {order.status === "CANCELLED" && order.paymentStatus === "REFUNDED" && (
+                                                    <div className="status-tag waiting-refund">
+                                                        <i className="icon-clock"></i> Đang chờ hoàn tiền
+                                                    </div>
+                                                )}
+                                                {order.status === "CANCELLED" && order.paymentStatus === "REFUNDED_SUCCESSFUL" && (
+                                                    <div className="status-tag refunded">
+                                                        <i className="icon-check"></i> Đã hoàn tiền
+                                                    </div>
+                                                )}
+                                                {order.status === "PENDING" && order.paymentStatus === "PAID" && (
+                                                    <button
+                                                        className="secondary-button"
+                                                        onClick={() => {
+                                                            // Hiển thị thông báo
+                                                            notification.info({
+                                                                message: 'Yêu cầu đã được gửi',
+                                                                description: 'Yêu cầu trả hàng/hoàn tiền của bạn đang được xem xét. Vui lòng chờ trong giây lát.',
+                                                                duration: 4.5,
+                                                                placement: 'topRight',
+                                                            });
+
+                                                             handleReturnRequest(order.id);
+                                                        }}
+                                                    >
+                                                        Trả hàng / Hoàn tiền
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -318,7 +359,7 @@ const PurchaseHistory = () => {
                         ))}
 
                         <div className="pagination-wrapper">
-                            <Pagination
+                        <Pagination
                                 current={currentPage}
                                 total={orders?.totalElements || 0}
                                 pageSize={ordersPerPage}

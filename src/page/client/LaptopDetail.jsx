@@ -261,6 +261,29 @@ const LaptopDetail = () => {
             }
         }
     };
+    const handleAddCart = async () => {
+        if(varientId) {
+            console.log(varientId);
+            const result = await dispatch(insertCartItem({
+                quantity: 1,
+                productVariantId: varientId,
+                userId: userData?.id,
+            }));
+            if (result === 200) {
+                notification.success({
+                    message: 'Thành công',
+                    description: 'Đã thêm sản phẩm vào giỏ hàng',
+                    placement: 'topRight',
+                });
+            } else {
+                notification.error({
+                    message: "Lỗi",
+                    description: "Không thể thêm vào giỏ hàng",
+                    placement: "topRight",
+                });
+            }
+        }
+    };
 
 
     return (
@@ -475,7 +498,9 @@ const LaptopDetail = () => {
                         </Button>
 
                         <div className="secondary-buttons">
-                            <Button size="large" className="secondary-btn">
+                            <Button size="large" className="secondary-btn"
+                                    onClick={handleAddCart}
+                            >
                                 <ShoppingCartOutlined />
                                 Thêm vào giỏ
                             </Button>

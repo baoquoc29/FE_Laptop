@@ -6,8 +6,24 @@ const RatingModal = ({ isOpen, onClose, onSubmit }) => {
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
     const [reviewText, setReviewText] = useState('');
+    const [userData, setUserData] = useState(() => {
+        const savedUser = localStorage.getItem('USER_LOGIN');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
 
     if (!isOpen) return null;
+
+    if (userData === null) return (
+        <div className="modal-overlay">
+            <div className="rating-modal">
+                <button className="close-button-modal" onClick={onClose}>
+                    &times;
+                </button>
+                <h2>Yêu cầu đăng nhập</h2>
+                <p>Bạn cần đăng nhập để có thể đánh giá sản phẩm.</p>
+            </div>
+        </div>
+    );
 
     const handleSubmit = () => {
         onSubmit({ rating, review: reviewText });
@@ -53,12 +69,12 @@ const RatingModal = ({ isOpen, onClose, onSubmit }) => {
                 </p>
 
                 <div className="review-section-modal">
-          <textarea
-              className="review-textarea-modal"
-              placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm/dịch vụ..."
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-          />
+                    <textarea
+                        className="review-textarea-modal"
+                        placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm/dịch vụ..."
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                    />
                 </div>
 
                 <button

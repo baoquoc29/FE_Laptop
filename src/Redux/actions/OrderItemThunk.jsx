@@ -59,3 +59,25 @@ export const getAllHistoryOrder = (page,size,orderStatus,sort,userId) => async (
         throw error; // Rất quan trọng nếu phía gọi muốn biết lỗi
     }
 };
+
+export const refundOrder = (orderId) => async (dispatch) => {
+    try {
+
+        const response = await orderItemService.refund(orderId);
+
+        if (response) {
+            dispatch({
+                type: "REFUND_ORDER",
+                payload: response,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu order.");
+        }
+
+        return response;
+    } catch (error) {
+        console.error("❌ Lỗi khi gửi đơn hàng:");
+
+        throw error;
+    }
+};
