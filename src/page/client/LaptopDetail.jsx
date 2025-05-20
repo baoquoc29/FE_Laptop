@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {
     ShoppingCartOutlined,
     HeartOutlined,
@@ -20,7 +20,7 @@ import {
     Avatar,
     Divider,
     Image,
-    Rate, notification, Spin
+    Rate, notification, Spin, Pagination
 } from 'antd';
 import '../style/LaptopDetail.css';
 import banner1 from '../../assets/x.webp';
@@ -28,6 +28,9 @@ import { getProductDetailById } from "../../Redux/actions/ProductThunk";
 import { useDispatch } from "react-redux";
 import {insertCartItem} from "../../Redux/actions/CartItemThunk";
 import {useParams} from "react-router-dom";
+import RatingModal from "./RatingModal";
+import {createReview, getAllReview} from "../../Redux/actions/RatingThunk";
+import {NotificationContext} from "../../components/NotificationProvider";
 
 const { TabPane } = Tabs;
 const { Meta } = Card;
@@ -40,10 +43,19 @@ const LaptopDetail = () => {
     const [showMoreSpecs, setShowMoreSpecs] = useState(false);
     const [productDetail, setProductDetail] = useState(null);
     const dispatch = useDispatch();
+    const notification = useContext(NotificationContext);
     const [loading, setLoading] = useState(true);
     const [varientId,setVariantId] = useState(0);
     const { id } = useParams();
     const [optionId, setOptionId] = useState(id);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [reviews, setReviews] = useState([]);
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        pageSize: 5,
+        totalElements: 0
+    });
     const fetchProductDetail = async (optionId) => {
         try {
             setLoading(true);
@@ -81,14 +93,71 @@ const LaptopDetail = () => {
             setLoading(false);
         }
     };
+    const fetchReviews = async () => {
+        try {
+            setLoading(true);
+            const res = await dispatch(getAllReview(productDetail?.id,pagination.currentPage,
+               pagination.pageSize
+            ));
+
+            if (res?.data) {
+                setReviews(res.data.content);
+                setPagination({
+                    currentPage: res.data.currentPage,
+                    totalPages: res.data.totalPages,
+                    pageSize: res.data.pageSize,
+                    totalElements: res.data.totalElements
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching reviews:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
     useEffect(() => {
         fetchProductDetail(id);
-    }, [dispatch, id]);
 
+    }, [dispatch, id]);
+    useEffect(() => {
+        if (productDetail?.id) {
+            fetchReviews();
+        }
+    }, [productDetail?.id, pagination.currentPage]);
+    const handlePageChange = (page) => {
+        setPagination(prev => ({ ...prev, currentPage: page }));
+    };
     const formatPrice = (price) => {
         return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
     };
+    const handleSubmitReview = async ({ rating, review }) => {
+        const body = {
+            productOptionId: productDetail?.id,
+            rating: rating,
+            comment: review
+        };
+        const res = await dispatch(createReview(body));
 
+        if (res?.code === 201) {
+            fetchReviews();
+            notification.success({
+                message: 'Thành công',
+                description: 'Đánh giá thành công',
+                placement: 'topRight',
+            });
+            window.location.reload();
+        } else {
+            notification.error({
+                message: 'Lỗi',
+                description: 'Không thể gửi đánh giá',
+                placement: 'topRight',
+            });
+        }
+    };
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
+    };
     const calculatePrice = () => {
         if (!productDetail) return 0;
 
@@ -287,9 +356,9 @@ const LaptopDetail = () => {
                         <h1 className="product-title">{productDetail.product.name}</h1>
                         <div className="rating-container">
                             <div className="stars">
-                                {renderStars(4.5)}
+                                {renderStars(productDetail.ratingAverage)}
                             </div>
-                            <span className="rating-text">4.5/5 (128 đánh giá)</span>
+                            <span className="rating-text">{productDetail.ratingAverage} / 5 ({productDetail.totalRating} đánh giá)</span>
                         </div>
 
                         <div className="price-container">
@@ -475,51 +544,58 @@ const LaptopDetail = () => {
                             </div>
                         </Card>
                     </TabPane>
-                    <TabPane tab={`Đánh giá (128)`} key="reviews">
+                    <TabPane tab={`Đánh giá (${productDetail.totalRating})`} key="reviews">
                         <Card>
                             <div className="reviews-header">
                                 <div className="rating-overview">
-                                    <div className="rating-score">4.5</div>
+                                    <div className="rating-score">{productDetail.ratingAverage}</div>
                                     <div>
                                         <div className="stars-container">
-                                            {renderStars(4)}
+                                            {renderStars(productDetail.ratingAverage)}
                                             <StarFilled className="star-half" />
                                         </div>
-                                        <div className="rating-count">Dựa trên 128 đánh giá</div>
+                                        <div className="rating-count">Dựa trên {productDetail.totalRating} đánh giá</div>
                                     </div>
                                 </div>
-                                <Button type="primary">Viết đánh giá</Button>
+                                <Button type="primary" onClick={() => setIsModalOpen(true)}
+                                    >Viết đánh giá</Button>
                             </div>
 
                             <div className="reviews-list">
-                                <ReviewItem
-                                    name="Nguyễn Văn A"
-                                    avatar="/placeholder.svg"
-                                    date="15/04/2023"
-                                    rating={5}
-                                    comment="Laptop rất tốt, hiệu năng mạnh mẽ, chơi game mượt mà. Pin trâu, màn hình đẹp. Rất hài lòng với sản phẩm này!"
-                                />
-                                <Divider />
-                                <ReviewItem
-                                    name="Trần Thị B"
-                                    avatar="/placeholder.svg"
-                                    date="02/03/2023"
-                                    rating={4}
-                                    comment="Máy chạy nhanh, mát, thiết kế đẹp. Chỉ tiếc là hơi nặng một chút so với mong đợi. Nhưng nhìn chung rất ổn."
-                                />
-                                <Divider />
-                                <ReviewItem
-                                    name="Lê Văn C"
-                                    avatar="/placeholder.svg"
-                                    date="18/02/2023"
-                                    rating={5}
-                                    comment="Quá tuyệt vời, đáng đồng tiền bát gạo. Chơi game cực mượt, làm việc nhanh. Màn hình hiển thị sắc nét."
-                                />
-
-                                <Button type="default" className="view-more-reviews">
-                                    Xem thêm đánh giá
-                                </Button>
+                                <div className="reviews-list">
+                                    {reviews.length > 0 ? (
+                                        reviews.map((review, index) => (
+                                            <React.Fragment key={review.id}>
+                                                <ReviewItem
+                                                    name={review.user.fullName}
+                                                    rating={review.rating}
+                                                    comment={review.comment}
+                                                    date={formatDate(review.createdAt)}
+                                                />
+                                                {index < reviews.length - 1 && <Divider/>}
+                                            </React.Fragment>
+                                        ))
+                                    ) : (
+                                        <p>Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
+                                    )}
+                                </div>
+                                {pagination.totalPages > 1 && (
+                                    <Pagination
+                                        current={pagination.currentPage}
+                                        total={pagination.totalElements}
+                                        pageSize={pagination.pageSize}
+                                        onChange={(page) => handlePageChange(page)}
+                                        showSizeChanger={false}
+                                        className="product-pagination"
+                                        showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} đánh giá`}
+                                    />
+                                )}
                             </div>
+                            <RatingModal
+                                isOpen={isModalOpen}
+                                onClose={() => setIsModalOpen(false)}
+                                onSubmit={handleSubmitReview}
+                            />
                         </Card>
                     </TabPane>
                 </Tabs>
