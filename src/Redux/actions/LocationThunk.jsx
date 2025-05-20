@@ -48,3 +48,19 @@ export const getAllWards = (districtId) => async (dispatch) => {
         throw error;
     }
 };
+
+export const getAllCountries = () => async (dispatch) => {
+    try {
+        const res = await locationService.getCountries();
+        if (res && res.data) {
+            dispatch({
+                type: "SET_COUNTRIES",
+                payload: res.data,
+            });
+        }
+        return res.data;
+    } catch (error) {
+        console.error("Error fetching countries:", error);
+        throw error;
+    }
+};

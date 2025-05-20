@@ -13,13 +13,20 @@ import LaptopDetail from "../page/client/LaptopDetail";
 import VoucherPage from "../page/client/VoucherPage";
 import LaptopGrid from "../page/client/LaptopGrid";
 import DialogflowMessenger from "../page/client/DialogflowMessenger";
+import Dashboard from '../page/admin/dashboard/Dashbarđ';
+import BrandManagement from '../page/admin/brand/BrandManagement';
+import CategoryManagement from '../page/admin/category/CategoryManagement';
 
 export function AppRouter() {
-    return (
-        <>
+   return (
+    <Routes>
+      {/* User Routes with Header and Footer */}
+      <Route
+        path="/*"
+        element={
+          <>
             <Header />
             <Routes>
-                {/* Public routes */}
                 <Route path="/" element={<HomeScreen />} />
                 <Route path="/result" element={<OrderSuccess />} />
                 <Route path="/checkout" element={<CheckoutConfirmation />} />
@@ -30,16 +37,26 @@ export function AppRouter() {
                 <Route path="/search/:text" element={<LaptopGrid />} />
                 <Route path="/search" element={<LaptopGrid />} />
                 <Route path="/test" element={<DialogflowMessenger />} />
-                <Route
-                    path="/admin/*"
-                    element={
-                        <PrivateRoute>
-                            <AdminLayout />
-                        </PrivateRoute>
-                    }
-                />
             </Routes>
             <Footer />
-        </>
-    );
+          </>
+        }
+      />
+      {/* Admin Routes with AdminLayout */}
+      <Route
+        path="/admin/*"
+        element={
+          <PrivateRoute >
+            <AdminLayout>
+              <Routes>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/brands" element={<BrandManagement />} />
+                <Route path= "/categories" element={<CategoryManagement />} />
+              </Routes>
+            </AdminLayout>
+          </PrivateRoute>
+        }
+      />
+    </Routes>
+  );
 }

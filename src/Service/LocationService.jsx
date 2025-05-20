@@ -6,13 +6,16 @@ export class LocationService extends baseService {
         super()
     };
     getProvinces  = () => {
-        return  this.get('api/v1/provinces',true)
+        return  this.get('api/v1/provinces',false)
     }
     getDistrict  = (provinceId) => {
-        return  this.get(`api/v1/districts/${provinceId}`,true)
+        return  this.get(`api/v1/districts/${provinceId}`,false)
     }
     getWards  = (wardId) => {
-        return  this.get(`api/v1/wards/${wardId}`,true)
+        return  this.get(`api/v1/wards/${wardId}`,false)
+    }
+    getCountries  = () => {
+        return  this.get('api/v1/countries',false)
     }
 }
 export const locationService = new LocationService ();
