@@ -2,7 +2,8 @@
 const initialState = {
     provinces: [],
     districts: [],
-    wards: []
+    wards: [],
+    countries: []
 };
 
 export const LocationReducer = (state = initialState, action) => {
@@ -22,6 +23,8 @@ export const LocationReducer = (state = initialState, action) => {
             };
         case 'SET_WARDS':
             return { ...state, wards: action.payload };
+        case 'SET_COUNTRIES':
+            return { ...state, countries: action.payload };
         default:
             return state;
     }

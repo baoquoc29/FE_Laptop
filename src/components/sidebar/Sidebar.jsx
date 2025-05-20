@@ -1,59 +1,65 @@
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  MdDashboard,
-  MdMovie,
-  MdList,
-  MdMenu,
-  MdChevronRight,
-  MdAdd,
-  MdHome,
-  MdLogout,
-  MdPersonOutline
-} from 'react-icons/md';
+  Laptop, 
+  ShoppingBag, 
+  Tag, 
+  LayoutDashboard, 
+  LogOut, 
+  Settings,
+  Home,
+  Users,
+  Ticket,
+  ShoppingCart
+} from 'lucide-react';
 import './sidebar.scss';
 
-const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
+const Sidebar = ({ isCollapsed }) => {
   const location = useLocation();
+  console.log(location.pathname);
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/'; // Redirect to home page after logout
   };
+
   const menuItems = [
     {
-      title: 'Quản lý người dùng',
-      icon: <MdPersonOutline />,
+      title: 'Quản lý',
+      icon: <Settings size={20} />,
       children: [
         {
-          path: '/admin/users',
-          name: 'Danh người dùng',
-          icon: <MdList/>
-        }
-      ]
-    },
-    {
-      title: 'Quản lý Phim',
-      icon: <MdMovie />,
-      children: [
-        {
-          path: '/admin/movies',
-          name: 'Danh sách phim',
-          icon: <MdList />
+          path: '/admin/dashboard',
+          name: 'Dashboard',
+          icon: <LayoutDashboard size={20} />
         },
         {
-          path: '/admin/movies/create',
-          name: 'Thêm phim mới',
-          icon: <MdAdd />
-        }
-      ]
-    },
-    {
-      title: 'Quản lý Thể loại',
-      icon: <MdList />,
-      children: [
+          path: '/admin/users',
+          name: 'Quản lý người dùng',
+          icon: <Users size={20} />
+        },
         {
-          path: '/admin/genres',
-          name: 'Danh sách thể loại',
-          icon: <MdList />
+          path: '/admin/brands',
+          name: 'Quản lý nhãn hàng',
+          icon: <ShoppingBag size={20} />
+        },
+        {
+          path: '/admin/categories',
+          name: 'Quản lý thể loại laptop',
+          icon: <Tag size={20} />
+        },
+        {
+          path: '/admin/laptops',
+          name: 'Quản lý laptop',
+          icon: <Laptop size={20} />
+        },
+        {
+          path: '/admin/discounts',
+          name: 'Quản lý mã giảm giá',
+          icon: <Ticket size={20} />
+        },
+        {
+          path: '/admin/orders',
+          name: 'Quản lý đơn hàng',
+          icon: <ShoppingCart size={20} />
         }
       ]
     }
@@ -61,16 +67,16 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   const bottomMenuItems = [
     {
-      title: 'Tài khoản',
+      title: 'Hệ thống',
       items: [
         {
           path: '/',
           name: 'Trang chủ',
-          icon: <MdHome />
+          icon: <Home size={20} />
         },
         {
           name: 'Đăng xuất',
-          icon: <MdLogout />
+          icon: <LogOut size={20} />
         }
       ]
     }
@@ -78,28 +84,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar__header">
+      <div className="sidebar__header" style={{ justifyContent: isCollapsed ? 'center' : 'space-between' }} >
         <div className="logo">
-          <MdMovie className="logo-icon" />
-          {!isCollapsed && <span>Admin Panel</span>}
+          <Laptop size={24} className="logo-icon"/>
+          {!isCollapsed && <span>Laptop Admin</span>}
         </div>
-        <button 
-          className="collapse-btn"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? <MdChevronRight /> : <MdMenu />}
-        </button>
       </div>
 
       <div className="sidebar__content">
-        <Link 
-          to="/admin/dashboard" 
-          className={`sidebar__item ${location.pathname === '/admin/dashboard' ? 'active' : ''}`}
-        >
-          <MdDashboard />
-          {!isCollapsed && <span>Dashboard</span>}
-        </Link>
-
         {menuItems.map((section, index) => (
           <div key={index} className="sidebar__section">
             {!isCollapsed && <div className="section-title">{section.title}</div>}
@@ -121,8 +113,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             {!isCollapsed && <div className="section-title">{section.title}</div>}
             {section.items.map((item) => (
               <Link
-                key={item.path}
-                to={item.path}
+                key={item.path || item.name}
+                to={item.path || '#'}
                 className={`sidebar__item ${location.pathname === item.path ? 'active' : ''}`}
                 onClick={item.name === 'Đăng xuất' ? handleLogout : null}
               >
