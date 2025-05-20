@@ -1,7 +1,7 @@
-import {useEffect, useState} from 'react';
+import {useContext, useEffect, useState} from 'react';
 import '../style/CheckoutConfirmation.css';
 import { CreditCardIcon, MapPinIcon, PackageIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
-import { Spin, Tag, Collapse, Alert } from "antd";
+import {Spin, Tag, Collapse, Alert, notification} from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createUrlPay } from "../../Redux/actions/PaymentThunk";
@@ -9,12 +9,15 @@ import {useDispatch, useSelector} from "react-redux";
 import {getAllVoucher} from "../../Redux/actions/VoucherThunk";
 import {getAllDistricts, getAllProvinces, getAllWards} from "../../Redux/actions/LocationThunk";
 import {insertOrder} from "../../Redux/actions/OrderItemThunk";
+import {getUserBalance} from "../../Redux/actions/UserThunk";
+import {NotificationContext} from "../../components/NotificationProvider";
 
 const { Panel } = Collapse;
 
 const CheckoutConfirmation = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activePanel, setActivePanel] = useState(['shipping']);
+    const notification = useContext(NotificationContext);
     const { provinces, districts, wards, loading, error } = useSelector(state => state.LocationReducer);
     const [userData, setUserData] = useState(() => {
         const savedUser = localStorage.getItem('USER_LOGIN');
@@ -68,7 +71,6 @@ const CheckoutConfirmation = () => {
     const total = Math.max(0, subtotal - discountValue + shipping);
 
     const handleChange = (e) => {
-        console.log(cartItems);
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
@@ -93,9 +95,9 @@ const CheckoutConfirmation = () => {
 
         setIsSubmitting(true);
         try {
-            // Tạo danh sách sản phẩm
+            // Prepare order items
             const orderProductRequestList = cartItems.map(item => ({
-                idCartItem : item.id,
+                idCartItem: item.id,
                 productVariantId: item.variantId,
                 quantity: item.quantity,
                 productCode: item.productCode,
@@ -104,6 +106,8 @@ const CheckoutConfirmation = () => {
                 priceAtOrderTime: item.basePrice,
                 productColor: item.color
             }));
+
+            // Prepare order data
             const orderData = {
                 userId: userData?.id,
                 discountId: voucher?.id || -1,
@@ -118,27 +122,58 @@ const CheckoutConfirmation = () => {
                 orderProductRequestList: orderProductRequestList
             };
 
-            console.log("Sending order:", orderData);
-            const res = await dispatch(insertOrder(orderData));
-            if(res.code === 200 && formData.paymentMethod === 'COD') {
-                window.location.href = '/result';
+            console.log("Submitting order:", orderData);
+            const balanceRes = await dispatch(getUserBalance(userData?.id));
+            if (balanceRes.code !== 200) {
+                throw new Error('Failed to check user balance');
             }
-            if(res.code === 200 && formData.paymentMethod === 'VNPAY') {
-                const result = await dispatch(createUrlPay(total, res.data.orderId));
 
-                if (result?.payload?.url) {
-                    window.location.href = result.payload.url;
-                } else {
-                    throw new Error('Failed to create payment URL');
-                }
+            if (balanceRes.data < total && formData.paymentMethod === 'IN_APP') {
+                notification.error({
+                    message: 'Số dư không đủ',
+                    description: 'Tài khoản của bạn không đủ số dư để thanh toán. Vui lòng chọn phương thức thanh toán khác.',
+                });
+                return;
             }
+
+            const res = await dispatch(insertOrder(orderData));
+
+            if (res.code !== 200) {
+                throw new Error(res.message || 'Failed to create order');
+            }
+
+            // Handle different payment methods
+            switch (formData.paymentMethod) {
+                case 'COD':
+                    window.location.href = '/result';
+                    break;
+
+                case 'IN_APP':
+                    window.location.href = '/result';
+                    break;
+
+                case 'VNPAY':
+                    const paymentRes = await dispatch(createUrlPay(total, res.data.orderId));
+                    if (!paymentRes?.payload?.url) {
+                        throw new Error('Failed to create payment URL');
+                    }
+                    window.location.href = paymentRes.payload.url;
+                    break;
+
+                default:
+                    throw new Error('Phương thức thanh toán không hợp lệ');
+            }
+
         } catch (error) {
-            console.error("Submit error:", error);
+            console.error("Order submission error:", error);
+            notification.error({
+                message: 'Lỗi đặt hàng',
+                description: error.message || 'Đã xảy ra lỗi khi đặt hàng. Vui lòng thử lại.',
+            });
         } finally {
             setIsSubmitting(false);
         }
     };
-
 
 
     const handlePanelChange = (keys) => {
@@ -340,6 +375,19 @@ const CheckoutConfirmation = () => {
                                     />
                                     <label htmlFor="cod">
                                         <span> Thanh toán khi nhận hàng (COD)</span>
+                                    </label>
+                                </div>
+                                <div className="payment-option">
+                                    <input
+                                        type="radio"
+                                        id="in_app"
+                                        name="paymentMethod"
+                                        value="IN_APP"
+                                        checked={formData.paymentMethod === 'IN_APP'}
+                                        onChange={handleChange}
+                                    />
+                                    <label htmlFor="in_app">
+                                        <span> Thanh toán qua số dư ví TechWallet</span>
                                     </label>
                                 </div>
                             </div>

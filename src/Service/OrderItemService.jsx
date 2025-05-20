@@ -26,5 +26,9 @@ export class OrderItemService extends baseService {
 
         return this.get(`api/v1/order/history/${userId}?${queryParams.toString()}`, true);
     }
+    refund = (id) => {
+        return this.put(`api/v1/order/refund/${id}`,{});
+    }
+
 }
 export const orderItemService = new OrderItemService ();

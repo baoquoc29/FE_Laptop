@@ -4,7 +4,7 @@ import {Star} from "lucide-react";
 
 const LaptopCard = ({ laptop }) => {
     const discountPercentage = laptop.price
-        ? Math.round(((laptop.price + 500000 - laptop.price) / laptop.price ) * 100)
+        ? Math.round(((laptop.price * 1.1 - laptop.price) / (laptop.price * 1.1)) * 100)
         : 0;
 
     return (
@@ -42,7 +42,7 @@ const LaptopCard = ({ laptop }) => {
                     </div>
                     {discountPercentage > 0 && (
                         <div className="original-price">
-                            {(laptop.price + 500000).toLocaleString('vi-VN')}đ
+                            {(laptop.price * 1.1).toLocaleString('vi-VN')}đ
                         </div>
 
                     )}

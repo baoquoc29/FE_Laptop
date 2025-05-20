@@ -261,7 +261,7 @@ const CartPage = () => {
             setTotalItems(prev => prev - 1);
             setSelectedProducts(prev => prev.filter(itemId => itemId !== id));
             message.success("Xóa sản phẩm thành công");
-            await dispatch(totalCartItem(userData.id));
+            window.location.reload();
         } catch (error) {
             notification.error({
                 message: 'Lỗi',
@@ -282,12 +282,12 @@ const CartPage = () => {
             setTotalItems(0);
             setSelectedProducts([]);
             setSelectAll(false);
-            await dispatch(totalCartItem(userData.id));
             notification.success({
                 message: 'Thành công',
                 description: 'Đã xóa tất cả sản phẩm khỏi giỏ hàng',
                 placement: 'topRight',
             });
+            window.location.reload();
         } catch (error) {
             notification.error({
                 message: 'Lỗi',

@@ -130,7 +130,7 @@ const ProductSections = () => {
                                                 {formatPrice(product.price || 0)}
                                             </span>
                                             <span className="old-price-home">
-                                                    {formatPrice(product.price + 500000)}
+                                                    {formatPrice(product.price * 1.1)}
                                                 </span>
                                         </div>
                                         <div className="rating-container">
@@ -187,7 +187,7 @@ const ProductSections = () => {
                                                         {formatPrice(product?.price || 0)}
                                                     </span>
                                             <span className="old-price-home">
-                                                            {formatPrice(product.price)}
+                                                           {formatPrice(product.price * 1.1)}
                                                         </span>
                                     </div>
                                     <div className="rating-container">

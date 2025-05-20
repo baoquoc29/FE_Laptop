@@ -433,7 +433,25 @@
 .ant-pagination-item-active a {
     color: #1890ff !important;
 }
+.status-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+    margin: 0 4px;
+}
 
+.waiting-refund {
+    background-color: #fff7e6;
+    color: #fa8c16;
+    border: 1px solid #ffd591;
+}
+
+.refunded {
+    background-color: #f6ffed;
+    color: #52c41a;
+    border: 1px solid #b7eb8f;
+}
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .purchase-history-header {
@@ -477,4 +495,5 @@
         width: 100%;
         justify-content: flex-end;
     }
+
 }

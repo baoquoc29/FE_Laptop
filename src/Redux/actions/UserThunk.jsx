@@ -104,3 +104,21 @@ export const getUserByUsername = (username) => async (dispatch) => {
         throw error; // Truyền lỗi cho phần gọi useEffect
     }
 };
+
+export const getUserBalance = (id) => async (dispatch) => {
+    try {
+        const res = await userService.getBalanceOfUser(id);
+
+        if (res) {
+            dispatch({
+                type: "Balance",
+                payload: res,
+            });
+            return res;
+        } else {
+            console.log("Không có dữ liệu trả về từ API tạo URL thanh toán");
+            throw new Error('Dữ liệu không hợp lệ');
+        }
+    } catch (error) {
+    }
+};

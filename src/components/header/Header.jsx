@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useContext} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {Badge, Button, Input, Carousel, Dropdown, Menu, notification} from 'antd';
+import {Badge, Button, Input, Carousel, Dropdown, Menu, notification, Space} from 'antd';
 import {
     Menu as MenuIcon,
     Search,
@@ -24,6 +24,8 @@ import SearchBar from "../../page/client/SearchBar";
 import {getProductDetailById} from "../../Redux/actions/ProductThunk";
 import {useDispatch} from "react-redux";
 import {totalCartItem} from "../../Redux/actions/CartItemThunk";
+import {MoneyCollectOutlined} from "@ant-design/icons";
+import {getUserBalance} from "../../Redux/actions/UserThunk";
 const Header = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -33,6 +35,7 @@ const Header = () => {
         const savedUser = localStorage.getItem('USER_LOGIN');
         return savedUser ? JSON.parse(savedUser) : null;
     });
+    const [balance, setBalance] = useState(0);
     const navigate = useNavigate();
     const notification = useContext(NotificationContext);
     const [totalCartItems,setTotalCartItems] = useState(0);
@@ -45,15 +48,15 @@ const Header = () => {
     useEffect(() => {
         if (!userData || !userData.id) return;
 
-        const fetchTotalCartItems = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await dispatch(totalCartItem(userData.id));
-                setTotalCartItems(response);
+                const cartRes = await dispatch(totalCartItem(userData.id));
+                setTotalCartItems(cartRes);
             } catch (error) {
                 notification.error({
                     message: 'Lỗi',
-                    description: 'Không thể tải sản phẩm',
+                    description: 'Không thể tải dữ liệu',
                     placement: 'topRight',
                 });
             } finally {
@@ -61,7 +64,23 @@ const Header = () => {
             }
         };
 
-        fetchTotalCartItems();
+        fetchData();
+    }, [dispatch, userData?.id]);
+    useEffect(() => {
+        if (!userData || !userData.id) return;
+
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const balance = await dispatch(getUserBalance(userData.id));
+                setBalance(balance.data);
+            } catch (error) {
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, [dispatch, userData?.id]);
 
     const closeLoginModal = () => {
@@ -106,6 +125,24 @@ const Header = () => {
     // User dropdown menu
     const userMenu = (
         <Menu>
+            {/* Thêm thông tin số dư */}
+            <Menu.Item
+                key="balance"
+                style={{
+                    cursor: 'default',
+                    backgroundColor: '#fafafa',
+                    color: '#1890ff',
+                    fontWeight: 500,
+                }}
+                disabled
+            >
+                <Space>
+                    <MoneyCollectOutlined size={16} />
+                    Số dư: {balance || 0} đ
+                </Space>
+            </Menu.Item>
+            <Menu.Divider />
+
             <Menu.Item
                 key="orders"
                 icon={<History size={16} />}
@@ -178,7 +215,7 @@ const Header = () => {
                             <span className="logo-text">TechLaptop</span>
                         </Link>
                     </div>
-                            <SearchBar></SearchBar>
+                    <SearchBar></SearchBar>
 
                     <div className="header-right">
                         {userData ? (
