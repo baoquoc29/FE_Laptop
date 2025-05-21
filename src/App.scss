@@ -21,6 +21,8 @@ html {
         font-size: 60%;
     }
 }
+/* Ghi đè toàn bộ thành phần Ant Design dùng font Roboto */
+body,
 .ant-typography,
 .ant-btn,
 .ant-input,
@@ -28,13 +30,37 @@ html {
 .ant-menu,
 .ant-table,
 .ant-modal,
-.ant-form {
-    font-family: 'Roboto', sans-serif !important;
-}
+.ant-form,
 .ant-form-item-label > label,
-label.ant-form-item-required {
+label.ant-form-item-required,
+.ant-checkbox-wrapper,
+.ant-radio-wrapper,
+.ant-picker,
+.ant-upload,
+.ant-tabs,
+.ant-collapse,
+.ant-alert,
+.ant-pagination,
+.ant-drawer,
+.ant-card,
+.ant-badge,
+.ant-tag,
+.ant-avatar,
+.ant-breadcrumb,
+.ant-slider,
+.ant-tooltip,
+.ant-popover,
+.ant-message,
+.ant-notification,
+.ant-result,
+.ant-empty,
+.ant-statistic,
+.ant-descriptions,
+.ant-comment,
+.ant-anchor {
     font-family: 'Roboto', sans-serif !important;
 }
+
 body {
     font-family: $font-family !important;
     font-weight: 700;
