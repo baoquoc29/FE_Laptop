@@ -259,17 +259,10 @@ const VoucherManagement = () => {
       width: 110,
     },
     {
-      title: 'Mô tả',
-      dataIndex: 'description',
-      key: 'description',
-      width: 150,
-      ellipsis: true,
-    },
-    {
       title: 'Loại',
       dataIndex: 'discountType',
       key: 'discountType',
-      width: 120,
+      width: 80,
       render: (type) => (
         <Tag color={type === 'PERCENT' ? 'blue' : 'green'}>
           {type === 'PERCENT' ? 'Phần trăm' : 'Cố định'}
@@ -287,7 +280,7 @@ const VoucherManagement = () => {
       title: 'Số lượng',
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 90,
+      width: 70,
       align: 'center',
     },
     {
@@ -295,20 +288,20 @@ const VoucherManagement = () => {
       dataIndex: 'startDate',
       key: 'startDate',
       render: (date) => formatDate(date),
-      width: 140,
+      width: 120,
     },
     {
       title: 'Ngày kết thúc',
       dataIndex: 'endDate',
       key: 'endDate',
       render: (date) => formatDate(date),
-      width: 140,
+      width: 120,
     },
     {
       title: 'Trạng thái',
       dataIndex: 'isActive',
       key: 'isActive',
-      width: 160,
+      width: 80,
       render: (isActive) => (
         <Tag color={isActive ? 'success' : 'error'}>
           {isActive ? 'Đang kích hoạt' : 'Không kích hoạt'}
@@ -332,7 +325,7 @@ const VoucherManagement = () => {
           />
         </Space>
       ),
-      width: 120,
+      width: 80,
     },
   ];
 
@@ -345,9 +338,6 @@ const VoucherManagement = () => {
             headerColor: 'white',
           },
         },
-        token: {
-          fontFamily: "'Montserrat', 'Roboto', sans-serif",
-        }
       }}
     >
     <div style={{ padding: 24, background: '#fff'}}>
@@ -486,7 +476,6 @@ const VoucherManagement = () => {
         loading={loading}
         pagination={false}
         bordered
-        scroll={{ x: 1200 }}
       />
 
       {/* Custom Pagination Component */}
