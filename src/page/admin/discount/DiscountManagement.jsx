@@ -1,63 +1,75 @@
 import { useState, useEffect } from 'react';
-import { Table, Input, Button, Space, Modal, Form, Upload, message, Image, ConfigProvider, Select, Typography, Pagination } from 'antd';
-import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined,  SortAscendingOutlined, SortDescendingOutlined, ExclamationCircleFilled } from '@ant-design/icons';
+import { Table, Input, Button, Space, Modal, Form, message, ConfigProvider, Select, Typography, Pagination, InputNumber, DatePicker, Switch, Tag } from 'antd';
+import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SortAscendingOutlined, SortDescendingOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
-import { createCategory, deleteCategory, getAllCategoryPagination, updateCategory } from '../../../Redux/actions/CategoryThunk';
+import { getAllVoucher, createVoucher, updateVoucher, deleteVoucher } from '../../../Redux/actions/VoucherThunk';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
-const DiscountManagement = () => {
-  // Existing state variables
-  const [categories, setCategories] = useState([]);
+const VoucherManagement = () => {
+  // State variables
+  const [vouchers, setVouchers] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState(null);
-  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [currentVoucher, setCurrentVoucher] = useState(null);
+  const [voucherToDelete, setVoucherToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [totalElements, setTotalElements] = useState(0);
+  
+  // Filter states
+  const [discountTypeFilter, setDiscountTypeFilter] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [dateRange, setDateRange] = useState(null);
 
   // Other state variables
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('asc');
-  const [fileList, setFileList] = useState([]);
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
 
-  const fetchCategories = async () => {
+  const fetchVouchers = async () => {
     try {
       setLoading(true);
-      // Updated API call to include sorting parameters
-      const response = await dispatch(getAllCategoryPagination(
-        searchText, 
-        currentPage, 
+      // Extract start and end dates from the date range if selected
+      const startDate = dateRange ? dateRange[0]?.format('YYYY-MM-DD') : null;
+      const endDate = dateRange ? dateRange[1]?.format('YYYY-MM-DD') : null;
+      
+      const response = await dispatch(getAllVoucher(
+        searchText,
+        discountTypeFilter,
+        statusFilter,
+        startDate,
+        endDate,
+        currentPage,
         pageSize,
         sortField,
         sortDirection
       ));
       
       if (response && response.content) {
-        setCategories(response.content);
+        setVouchers(response.content);
         setTotalElements(response.totalElements);
       } else {
-        messageApi.warning("Không có danh mục nào");
+        messageApi.warning("Không có mã giảm giá nào");
       }
     } catch (error) {
-      console.error("Error fetching categories:", error);
-      messageApi.error("Đã xảy ra lỗi khi tải danh mục");
+      console.error("Error fetching vouchers:", error);
+      messageApi.error("Đã xảy ra lỗi khi tải mã giảm giá");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCategories();
-  }, [currentPage, pageSize, searchText, sortField, sortDirection]);
+    fetchVouchers();
+  }, [currentPage, pageSize, searchText, discountTypeFilter, statusFilter, dateRange, sortField, sortDirection]);
 
   // Page change handler
   const handlePageChange = (page) => {
@@ -67,53 +79,60 @@ const DiscountManagement = () => {
   // Page size change handler
   const handlePageSizeChange = (current, size) => {
     setPageSize(size);
-    setCurrentPage(1); // Reset to first page when changing page size
+    setCurrentPage(1);
   };
 
   // Sort field change handler
   const handleSortFieldChange = (value) => {
     setSortField(value);
-    console.log("Sort field changed:", value);
-    setCurrentPage(1); // Reset to first page when changing sort
+    setCurrentPage(1);
   };
 
   // Sort direction change handler
   const handleSortDirectionChange = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    setCurrentPage(1); // Reset to first page when changing sort direction
+    setCurrentPage(1);
   };
-
 
   const handleSearch = (e) => {
     setSearchText(e.target.value);
   };
 
-  const showModal = (category = null) => {
-    setCurrentCategory(category);
-    form.resetFields();
-    setFileList([]);
+  const handleDiscountTypeChange = (value) => {
+    setDiscountTypeFilter(value);
+    setCurrentPage(1);
+  };
 
-    if (category) {
-      if (category.imageUrl) {
-        const imageFileList = [{
-          uid: '-1',
-          name: 'image.png',
-          status: 'done',
-          url: category.imageUrl,
-        }];
-        
-        setFileList(imageFileList);
-        
-        // Initialize both name and image fields
-        form.setFieldsValue({
-          name: category.name,
-          image: imageFileList  // Add this line to set the image field
-        });
-      } else {
-        form.setFieldsValue({
-          name: category.name
-        });
-      }
+  const handleStatusChange = (value) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleDateRangeChange = (dates) => {
+    setDateRange(dates);
+    setCurrentPage(1);
+  };
+
+  const showModal = (voucher = null) => {
+    setCurrentVoucher(voucher);
+    form.resetFields();
+
+    if (voucher) {
+      // Set existing voucher values
+      form.setFieldsValue({
+        code: voucher.code,
+        description: voucher.description,
+        discountType: voucher.discountType,
+        discountValue: voucher.discountValue,
+        date: [dayjs(voucher.startDate), dayjs(voucher.endDate)],
+        quantity: voucher.quantity,
+        isActive: voucher.isActive
+      });
+    } else {
+      // For new voucher, initialize isActive to true
+      form.setFieldsValue({
+        isActive: true
+      });
     }
     setIsModalVisible(true);
   };
@@ -121,41 +140,46 @@ const DiscountManagement = () => {
   const handleCancel = () => {
     setIsModalVisible(false);
   };
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       
-      const formData = new FormData();
-      formData.append('name', values.name);
-      console.log("Form data prepared:", fileList);
-      if (fileList.length > 0 && fileList[0].originFileObj) {
-        formData.append('image', fileList[0].originFileObj);
-      }
+      const voucherData = {
+        code: values.code,
+        description: values.description,
+        discountType: values.discountType,
+        discountValue: values.discountValue,
+        startDate: values.date[0].format("YYYY-MM-DDTHH:mm:ss"),
+        endDate: values.date[1].format("YYYY-MM-DDTHH:mm:ss"),
+        quantity: values.quantity,
+        isActive: values.isActive
+      };
 
-      if (currentCategory) {
-        // Update category
-        const response = await dispatch(updateCategory(currentCategory.id, formData));
+      if (currentVoucher) {
+        // Update voucher
+        const response = await dispatch(updateVoucher(currentVoucher.id, voucherData));
         console.log("Update response:", response);
         if (response === 200) {
-          messageApi.success('Cập nhật thể loại thành công');
-          fetchCategories();
+          messageApi.success('Cập nhật mã giảm giá thành công');
+          fetchVouchers();
           setIsModalVisible(false);
-        } else if(response === 409){
-          messageApi.error('Thể loại đã tồn tại');
-        }else{
-          messageApi.error('Cập nhật thể loại thất bại');
+        } else if (response === 409) {
+          messageApi.error('Mã giảm giá đã tồn tại');
+        } else {
+          messageApi.error('Cập nhật mã giảm giá thất bại');
         }
       } else {
-        // Create new category
-        const response = await dispatch(createCategory(formData));
+        // Create new voucher
+        const response = await dispatch(createVoucher(voucherData));
         if (response === 201) {
-          messageApi.success('Thêm thể loại thành công');
-          fetchCategories();
+          messageApi.success('Thêm mã giảm giá thành công');
+          fetchVouchers();
           setIsModalVisible(false);
-        } else if(response === 409){
-          messageApi.error('Thể loại đã tồn tại');
-        }else{
-          messageApi.error('Cập nhật thể loại thất bại');
+        } else if (response === 409) {
+          messageApi.error('Mã giảm giá đã tồn tại');
+        } else {
+          messageApi.error('Thêm mã giảm giá thất bại');
         }
       }
     } catch (error) {
@@ -164,39 +188,39 @@ const DiscountManagement = () => {
     }
   };
 
-  // Show delete confirmation modal instead of using Modal.confirm
-  const showDeleteModal = (category) => {
-    setCategoryToDelete(category);
+  // Show delete confirmation modal
+  const showDeleteModal = (voucher) => {
+    setVoucherToDelete(voucher);
     setIsDeleteModalVisible(true);
   };
 
   // Handle cancel for delete modal
   const handleDeleteCancel = () => {
     setIsDeleteModalVisible(false);
-    setCategoryToDelete(null);
+    setVoucherToDelete(null);
   };
 
   // Handle actual deletion when confirmed
   const handleDeleteConfirm = async () => {
-    if (!categoryToDelete) return;
+    if (!voucherToDelete) return;
 
     try {
       setLoading(true);
-      const response = await dispatch(deleteCategory(categoryToDelete.id));
+      const response = await dispatch(deleteVoucher(voucherToDelete.id));
 
       if (response === 204) {
-        messageApi.success('Xóa thể loại thành công');
-        fetchCategories();
+        messageApi.success('Xóa mã giảm giá thành công');
+        fetchVouchers();
       } else {
-        messageApi.error('Xóa thể loại thất bại');
+        messageApi.error('Xóa mã giảm giá thất bại');
       }
     } catch (error) {
-      console.error("Error deleting category:", error);
+      console.error("Error deleting voucher:", error);
       messageApi.error('Đã xảy ra lỗi khi xóa');
     } finally {
       setLoading(false);
       setIsDeleteModalVisible(false);
-      setCategoryToDelete(null);
+      setVoucherToDelete(null);
     }
   };
 
@@ -205,41 +229,91 @@ const DiscountManagement = () => {
     return dayjs(dateString).format('DD/MM/YYYY HH:mm');
   };
 
+  // Format currency
+  const formatCurrency = (value) => {
+    if (!value) return '-';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  };
+
+  // Format discount value based on type
+  const formatDiscount = (value, type) => {
+    if (type === 'PERCENT') {
+      return `${value}%`;
+    } else {
+      return formatCurrency(value);
+    }
+  };
+
   const columns = [
     {
       title: 'STT',
       key: 'index',
-      width: 70,
+      width: 60,
       align: 'center',
       render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
     },
     {
-      title: 'Hình ảnh',
-      dataIndex: 'imageUrl',
-      key: 'image',
-      render: (imageUrl) => (
-        imageUrl ? <Image src={imageUrl} width={50} height={50} style={{ objectFit: 'contain' }} /> : '-'
+      title: 'Mã giảm giá',
+      dataIndex: 'code',
+      key: 'code',
+      width: 110,
+    },
+    {
+      title: 'Mô tả',
+      dataIndex: 'description',
+      key: 'description',
+      width: 150,
+      ellipsis: true,
+    },
+    {
+      title: 'Loại',
+      dataIndex: 'discountType',
+      key: 'discountType',
+      width: 120,
+      render: (type) => (
+        <Tag color={type === 'PERCENT' ? 'blue' : 'green'}>
+          {type === 'PERCENT' ? 'Phần trăm' : 'Cố định'}
+        </Tag>
       ),
+    },
+    {
+      title: 'Giá trị',
+      dataIndex: 'discountValue',
+      key: 'discountValue',
       width: 100,
+      render: (value, record) => formatDiscount(value, record.discountType),
     },
     {
-      title: 'Tên thể loại',
-      dataIndex: 'name',
-      key: 'name',
+      title: 'Số lượng',
+      dataIndex: 'quantity',
+      key: 'quantity',
+      width: 90,
+      align: 'center',
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: 'Ngày bắt đầu',
+      dataIndex: 'startDate',
+      key: 'startDate',
       render: (date) => formatDate(date),
-      width: 150,
+      width: 140,
     },
     {
-      title: 'Ngày cập nhật',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
+      title: 'Ngày kết thúc',
+      dataIndex: 'endDate',
+      key: 'endDate',
       render: (date) => formatDate(date),
-      width: 150,
+      width: 140,
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'isActive',
+      key: 'isActive',
+      width: 160,
+      render: (isActive) => (
+        <Tag color={isActive ? 'success' : 'error'}>
+          {isActive ? 'Đang kích hoạt' : 'Không kích hoạt'}
+        </Tag>
+      ),
     },
     {
       title: 'Thao tác',
@@ -262,32 +336,6 @@ const DiscountManagement = () => {
     },
   ];
 
-  const uploadProps = {
-    beforeUpload: (file) => {
-      const isImage = file.type.startsWith('image/');
-      if (!isImage) {
-        messageApi.error('Chỉ được upload file ảnh!');
-        return Upload.LIST_IGNORE; // Không thêm vào danh sách nếu không phải ảnh
-      }
-      return false; // Không tự động upload
-    },
-    maxCount: 1,
-    fileList, // Sử dụng state fileList
-    onChange: ({ fileList: newFileList }) => {
-      setFileList(newFileList);
-    },
-    listType: "picture-card",
-    accept: "image/*",
-    onRemove: () => {
-      setFileList([]);
-    }
-  };
-  const normFile = (e) => {
-    if (Array.isArray(e)) {
-      return e;
-    }
-    return e?.fileList;
-  };
   return (
     <ConfigProvider
       theme={{
@@ -316,11 +364,10 @@ const DiscountManagement = () => {
           level={2} 
           style={{ 
             margin: 0, 
-            fontWeight: 800, // Extra bold for emphasis
-            fontFamily: "'Montserrat', sans-serif" 
+            fontWeight: 800
           }}
         >
-          Quản lý thể loại laptop
+          Quản lý mã giảm giá
         </Title>
         
         <Button 
@@ -328,25 +375,58 @@ const DiscountManagement = () => {
           icon={<PlusOutlined />}
           onClick={() => showModal()}
           size="large"
-          style={{ height: 48 }} // Match height with title
+          style={{ height: 48 }}
         >
-          Thêm thể loại
+          Thêm mã giảm giá
         </Button>
       </div>
       
-      {/* Search and Filter */}
+      {/* Search and Filters */}
       <div style={{ 
         marginBottom: 24,
         display: 'flex', 
-        gap: '16px' // Increased spacing
+        flexWrap: 'wrap',
+        gap: '16px'
       }}>
         <Input
-          placeholder="Tìm kiếm thể loại..."
+          placeholder="Tìm kiếm mã giảm giá..."
           prefix={<SearchOutlined />}
-          style={{ width: 300 }}
+          style={{ width: 250 }}
           value={searchText}
           onChange={handleSearch}
           size="large"
+        />
+        
+        <Select
+          placeholder="Loại giảm giá"
+          style={{ width: 160 }}
+          allowClear
+          onChange={handleDiscountTypeChange}
+          value={discountTypeFilter}
+          size="large"
+        >
+          <Option value="PERCENT">Phần trăm</Option>
+          <Option value="FIXED">Cố định</Option>
+        </Select>
+        
+        <Select
+          placeholder="Trạng thái"
+          style={{ width: 180 }}
+          allowClear
+          onChange={handleStatusChange}
+          value={statusFilter}
+          size="large"
+        >
+          <Option value={true}>Đang kích hoạt</Option>
+          <Option value={false}>Không kích hoạt</Option>
+        </Select>
+        
+        <RangePicker
+          placeholder={['Từ ngày', 'Đến ngày']}
+          style={{ width: 300 }}
+          onChange={handleDateRangeChange}
+          size="large"
+          format="DD/MM/YYYY"
         />
       </div>
       
@@ -362,12 +442,14 @@ const DiscountManagement = () => {
           <Select 
             value={sortField} 
             onChange={handleSortFieldChange}
-            style={{ width: 150 }}
+            style={{ width: 180 }}
             size="middle"
           >
+            <Option value="code">Mã giảm giá</Option>
+            <Option value="discountValue">Giá trị giảm</Option>
+            <Option value="startDate">Ngày bắt đầu</Option>
+            <Option value="endDate">Ngày kết thúc</Option>
             <Option value="createdAt">Ngày tạo</Option>
-            <Option value="updatedAt">Ngày cập nhật</Option>
-            <Option value="name">Tên thể loại</Option>
           </Select>
           
           <Button 
@@ -399,11 +481,12 @@ const DiscountManagement = () => {
       {/* Table without pagination */}
       <Table 
         columns={columns} 
-        dataSource={categories} 
+        dataSource={vouchers} 
         rowKey="id"
         loading={loading}
-        pagination={false} // Disable built-in pagination
+        pagination={false}
         bordered
+        scroll={{ x: 1200 }}
       />
 
       {/* Custom Pagination Component */}
@@ -425,40 +508,111 @@ const DiscountManagement = () => {
 
       {/* Add/Edit Modal */}
       <Modal
-        title={currentCategory ? "Chỉnh sửa thể loại" : "Thêm thể loại mới"}
+        title={currentVoucher ? "Chỉnh sửa mã giảm giá" : "Thêm mã giảm giá mới"}
         visible={isModalVisible}
         onOk={handleSubmit}
         onCancel={handleCancel}
         width={700}
-        okText={currentCategory ? "Cập nhật" : "Thêm mới"}
+        okText={currentVoucher ? "Cập nhật" : "Thêm mới"}
         cancelText="Hủy"
         confirmLoading={loading}
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            name="name"
-            label="Tên thể loại"
-            rules={[{ required: true, message: 'Vui lòng nhập tên thể loại!' }]}
+            name="code"
+            label="Mã giảm giá"
+            rules={[{ required: true, message: 'Vui lòng nhập mã giảm giá!' }]}
           >
-            <Input placeholder="Nhập tên thể loại" />
+            <Input placeholder="Nhập mã giảm giá (VD: SALE10P)" />
+          </Form.Item>
+
+
+          <Form.Item
+            name="description"
+            label="Mô tả"
+          >
+            <Input.TextArea rows={3} placeholder="Nhập mô tả chi tiết về mã giảm giá" />
+          </Form.Item>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <Form.Item
+              name="discountType"
+              label="Loại giảm giá"
+              rules={[{ required: true, message: 'Vui lòng chọn loại giảm giá!' }]}
+              style={{ width: '50%' }}
+            >
+              <Select placeholder="Chọn loại giảm giá">
+                <Option value="PERCENT">Phần trăm (%)</Option>
+                <Option value="FIXED">Cố định (VNĐ)</Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="discountValue"
+              label="Giá trị"
+              rules={[{ required: true, message: 'Vui lòng nhập giá trị giảm giá!' }]}
+              style={{ width: '50%' }}
+            >
+              <InputNumber 
+                style={{ width: '100%' }}
+                min={0} 
+                placeholder="Nhập giá trị"
+                formatter={(value) => {
+                  const type = form.getFieldValue('discountType');
+                  if (type === 'PERCENT') {
+                    return `${value}%`;
+                  } else {
+                    return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                  }
+                }}
+                parser={(value) => {
+                  const type = form.getFieldValue('discountType');
+                  if (type === 'PERCENT') {
+                    return value.replace('%', '');
+                  } else {
+                    return value.replace(/\$\s?|(,*)/g, '');
+                  }
+                }}
+              />
+            </Form.Item>
+          </div>
+
+          <Form.Item
+            name="date"
+            label="Thời gian hiệu lực"
+            rules={[{ required: true, message: 'Vui lòng chọn thời gian hiệu lực!' }]}
+          >
+            <RangePicker 
+              showTime 
+              style={{ width: '100%' }} 
+              format="DD/MM/YYYY HH:mm"
+              placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+            />
           </Form.Item>
 
           <Form.Item
-              name="image"
-              label="Hình ảnh"
-              valuePropName="fileList"
-              getValueFromEvent={normFile}
-              rules={[{ required: !currentCategory, message: 'Vui lòng tải lên hình ảnh!' }]}
-            >
-              <Upload {...uploadProps} listType="picture-card">
-                {fileList.length >= 1 ? null : (
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                  </div>
-                )}
-              </Upload>
-            </Form.Item>
+            name="quantity"
+            label="Số lượng"
+            rules={[{ required: true, message: 'Vui lòng nhập số lượng!' }]}
+          >
+            <InputNumber 
+              min={1} 
+              style={{ width: '100%' }}
+              placeholder="Nhập số lượng mã có thể sử dụng"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="isActive"
+            label="Trạng thái"
+            valuePropName="checked"
+          >
+            <Switch 
+              checkedChildren="Kích hoạt" 
+              unCheckedChildren="Không kích hoạt" 
+              defaultChecked 
+            />
+          </Form.Item>
         </Form>
       </Modal>
 
@@ -476,7 +630,7 @@ const DiscountManagement = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <ExclamationCircleFilled style={{ color: '#ff4d4f', fontSize: '22px' }} />
           <p style={{ margin: 0 }}>
-            Bạn có chắc chắn muốn xóa thể loại <strong>{categoryToDelete?.name}</strong>?
+            Bạn có chắc chắn muốn xóa mã giảm giá <strong>{voucherToDelete?.code}</strong>?
           </p>
         </div>
         <p style={{ marginTop: '12px', color: '#666' }}>
@@ -488,4 +642,4 @@ const DiscountManagement = () => {
   );
 };
 
-export default DiscountManagement;
+export default VoucherManagement;

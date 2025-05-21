@@ -45,7 +45,7 @@ const CartPage = () => {
     useEffect(() => {
         const fetchVouchers = async () => {
             try {
-                const response = await dispatch(getAllVoucher(1, 100));
+                const response = await dispatch(getAllVoucher(null, null, null, null, null, 1, 100, null, null));
                 if (response && response.content) {
                     setVouchers(response.content);
                 }

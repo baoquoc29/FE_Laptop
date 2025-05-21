@@ -17,6 +17,11 @@ import Dashboard from '../page/admin/dashboard/Dashbarđ';
 import BrandManagement from '../page/admin/brand/BrandManagement';
 import CategoryManagement from '../page/admin/category/CategoryManagement';
 import ChatManager from "../page/admin/ChatManager";
+import DiscountManagement from '../page/admin/discount/DiscountManagement';
+import UserManagement from '../page/admin/user/UserManagement';
+import ProductManagement from '../page/admin/product/ProductManagement';
+import CreateProduct from '../page/admin/product/CreateProduct';
+import AdminProductDetail from '../page/admin/product/AdminProductDetail';
 
 export function AppRouter() {
    return (
@@ -52,8 +57,14 @@ export function AppRouter() {
               <Routes>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/brands" element={<BrandManagement />} />
+                <Route path="/categories" element={<CategoryManagement />} />
+                <Route path="/discounts" element={<DiscountManagement />} />
+                <Route path="/users" element={<UserManagement />} />
+                <Route path="/laptops" element={<ProductManagement />} />
+                <Route path="/laptops/create" element={<CreateProduct />} />
                 <Route path= "/categories" element={<CategoryManagement />} />
-                  <Route path= "/message" element={<ChatManager />} />
+                <Route path= "/message" element={<ChatManager />} />
+                <Route path= "/laptops/detail/:id" element={<AdminProductDetail />} />
               </Routes>
             </AdminLayout>
           </PrivateRoute>

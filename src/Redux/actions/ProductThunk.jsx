@@ -113,3 +113,58 @@ export const getAllBrands = () => async (dispatch) => {
         });
     }
 };
+
+export const adminGetAllProducts = (keyword, categoryId, brandId, page, size, sortBy, sortDir) => async (dispatch) => {
+    try {
+        dispatch({ type: "PRODUCT_ADMIN_REQUEST" });
+        const response = await productService.adminGetAllProducts(keyword, categoryId, brandId, page, size, sortBy, sortDir);
+        dispatch({
+            type: "PRODUCT_ADMIN_SUCCESS",
+            payload: response.data
+        });
+        return response.data;
+    } catch (error) {
+        dispatch({
+            type: "PRODUCT_ADMIN_FAILURE",
+            payload: error.response?.data?.message || error.message
+        });
+    }
+};
+
+export const adminDetailProduct = (productId) => async (dispatch) => {
+    try {
+        dispatch({ type: "PRODUCT_ADMIN_DETAIL_REQUEST" });
+        const response = await productService.adminDetailProduct(productId);
+        dispatch({
+            type: "PRODUCT_ADMIN_DETAIL_SUCCESS",
+            payload: response.data
+        });
+        return response.data;
+    } catch (error) {
+        dispatch({
+            type: "PRODUCT_ADMIN_DETAIL_FAILURE",
+            payload: error.response?.data?.message || error.message
+        });
+    }
+};
+
+export const adminCreateProduct = (product) => async (dispatch) => {
+    try {
+        dispatch({ type: "PRODUCT_ADMIN_CREATE_REQUEST" });
+        const response = await productService.adminCreateProduct(product);
+        if (response && response.code === 201) {
+            dispatch({
+                type: "PRODUCT_ADMIN_CREATE_SUCCESS",
+                payload: response.code,
+            });
+        } else {
+            console.log("Product creation failed");
+        }
+        return response.code;
+    } catch (error) {
+        dispatch({
+            type: "PRODUCT_ADMIN_CREATE_FAILURE",
+            payload: error.response?.data?.message || error.message
+        });
+    }
+};
