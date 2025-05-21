@@ -238,8 +238,8 @@ const CategoryManagement = () => {
       title: 'Ngày cập nhật',
       dataIndex: 'updatedAt',
       key: 'updatedAt',
-      render: (date) => formatDate(date),
       width: 150,
+      render: (date) => date ? formatDate(date) : 'Chưa cập nhật',
     },
     {
       title: 'Thao tác',

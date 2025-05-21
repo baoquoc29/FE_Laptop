@@ -21,9 +21,22 @@ html {
         font-size: 60%;
     }
 }
-
+.ant-typography,
+.ant-btn,
+.ant-input,
+.ant-select,
+.ant-menu,
+.ant-table,
+.ant-modal,
+.ant-form {
+    font-family: 'Roboto', sans-serif !important;
+}
+.ant-form-item-label > label,
+label.ant-form-item-required {
+    font-family: 'Roboto', sans-serif !important;
+}
 body {
-    font-family: $font-family;
+    font-family: $font-family !important;
     font-weight: 700;
     line-height: 1.5;
 

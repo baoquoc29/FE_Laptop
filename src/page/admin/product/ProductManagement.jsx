@@ -273,38 +273,11 @@ const ProductManagement = () => {
       align: 'center',
     },
     {
-      title: 'Đánh giá',
-      dataIndex: 'ratingAverage',
-      key: 'rating',
-      width: 80,
-      align: 'center',
-      render: (rating) => (
-        <span>
-          <StarFilled style={{ color: '#fadb14', marginRight: 5 }} />
-          {rating ? rating.toFixed(1) : 'N/A'}
-        </span>
-      )
-    },
-    {
       title: 'Đã bán',
       dataIndex: 'salesCount',
       key: 'salesCount',
       width: 70,
       align: 'center',
-    },
-    {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      width: 120,
-      render: (date) => formatDate(date),
-    },
-        {
-      title: 'Ngày cập nhật',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
-      width: 110,
-      render: (date) => formatDate(date),
     },
     {
       title: 'Thao tác',
@@ -348,9 +321,6 @@ const ProductManagement = () => {
             headerColor: 'white',
           },
         },
-        token: {
-          fontFamily: "'Montserrat', 'Roboto', sans-serif",
-        }
       }}
     >
     <div style={{ padding: 24, background: '#fff'}}>
@@ -367,8 +337,7 @@ const ProductManagement = () => {
           level={2} 
           style={{ 
             margin: 0, 
-            fontWeight: 800,
-            fontFamily: "'Montserrat', sans-serif" 
+            fontWeight: 800
           }}
         >
           Quản lý laptop
@@ -483,7 +452,6 @@ const ProductManagement = () => {
         loading={loading}
         pagination={false}
         bordered
-        scroll={{ x: 1500 }}
       />
 
       {/* Custom Pagination Component */}

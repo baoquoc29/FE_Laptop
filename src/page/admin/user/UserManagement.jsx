@@ -180,13 +180,6 @@ const UserManagement = () => {
       width: 140,
     },
     {
-      title: 'Ngày cập nhật',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
-      render: (date) => formatDate(date),
-      width: 140,
-    },
-    {
       title: 'Trạng thái',
       dataIndex: 'isBlocked',
       key: 'isBlocked',
