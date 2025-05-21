@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Table, Input, Button, Space, Modal, Form, Upload, message, Image, Tag, ConfigProvider, Select, Typography, Pagination,  Row, Col, Card, Tooltip } from 'antd';
 import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SortAscendingOutlined, SortDescendingOutlined, ExclamationCircleFilled, PictureOutlined, StarFilled, EyeOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
-import { adminGetAllProducts, getAllCategories, getAllBrands } from '../../../Redux/actions/ProductThunk';
+import { adminGetAllProducts, getAllCategories, getAllBrands, adminDeleteProduct } from '../../../Redux/actions/ProductThunk';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 
@@ -157,7 +157,9 @@ const ProductManagement = () => {
   const handleEditProduct = (productId) => {
     navigate(`/admin/laptops/edit/${productId}`);
   };
-
+  const handleDetailProduct = (productId) => {
+    navigate(`/admin/laptops/detail/${productId}`);
+  };
   // Show delete confirmation modal
   const showDeleteModal = (product) => {
     setProductToDelete(product);
@@ -177,9 +179,14 @@ const ProductManagement = () => {
     try {
       setLoading(true);
       
-      // Delete product API call goes here
+      const response = await dispatch(adminDeleteProduct(productToDelete.id));
+      console.log(response);
+      if (response === 204) {
+        messageApi.success('Xóa sản phẩm thành công');
+      } else {
+        messageApi.error('Đã xảy ra lỗi khi xóa sản phẩm');
+      }
       
-      messageApi.success('Xóa sản phẩm thành công');
       fetchProducts();
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -284,28 +291,33 @@ const ProductManagement = () => {
       key: 'action',
       fixed: 'right',
       width: 120,
+      align: 'center',
       render: (_, record) => (
         <Space size="small">
           <Button 
             type="primary" 
             icon={<EyeOutlined />} 
-            onClick={() => showViewModal(record)}
+            onClick={() => handleDetailProduct(record.id)}
             size="middle"
-            shape="circle"
+            title="Xem chi tiết"
+            style={{ borderRadius: '4px' }}
           />
           <Button 
-            type="default" 
-            icon={<EditOutlined />} 
+            type="primary"
+            style={{ background: '#52c41a', borderRadius: '4px' }}
+            icon={<EditOutlined />}
             onClick={() => handleEditProduct(record.id)}
             size="middle"
-            shape="circle"
+            title="Chỉnh sửa"
           />
           <Button 
-            danger 
+            danger
+            type="primary" 
             icon={<DeleteOutlined />} 
             onClick={() => showDeleteModal(record)}
             size="middle"
-            shape="circle"
+            title="Xóa sản phẩm"
+            style={{ borderRadius: '4px' }}
           />
         </Space>
       ),
@@ -496,81 +508,7 @@ const ProductManagement = () => {
         </p>
       </Modal>
 
-      {/* View Product Detail Modal */}
-      <Modal
-        title="Chi tiết sản phẩm"
-        visible={isViewModalVisible}
-        onCancel={handleViewCancel}
-        footer={[
-          <Button key="back" onClick={handleViewCancel}>
-            Đóng
-          </Button>,
-          <Button key="edit" type="primary" icon={<EditOutlined />} onClick={() => {
-            handleViewCancel();
-            handleEditProduct(currentProduct.id);  {/* Đã thay đổi ở đây */}
-          }}>
-            Chỉnh sửa
-          </Button>
-        ]}
-        width={800}
-      >
-        {currentProduct && (
-          <div>
-            <Row gutter={[24, 24]}>
-              <Col span={12}>
-                <div style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 18, marginBottom: 8 }}>Thông tin chung</h3>
-                  <Card bordered={false} style={{ background: '#f5f5f5' }}>
-                    <p><strong>Tên sản phẩm:</strong> {currentProduct.name}</p>
-                    <p><strong>Thể loại:</strong> {currentProduct.category?.name}</p>
-                    <p><strong>Nhãn hàng:</strong> {currentProduct.brand?.name}</p>
-                    <p><strong>Tồn kho:</strong> {currentProduct.stock}</p>
-                    <p><strong>Số lượng đã bán:</strong> {currentProduct.salesCount}</p>
-                    <p><strong>Đánh giá trung bình:</strong> {currentProduct.ratingAverage?.toFixed(1)}</p>
-                    <p><strong>Ngày tạo:</strong> {formatDate(currentProduct.createdAt)}</p>
-                    <p><strong>Cập nhật lần cuối:</strong> {formatDate(currentProduct.updatedAt)}</p>
-                  </Card>
-                </div>
-              </Col>
-              <Col span={12}>
-                <h3 style={{ fontSize: 18, marginBottom: 8 }}>Mô tả sản phẩm</h3>
-                <Card bordered={false} style={{ background: '#f5f5f5', height: 'calc(100% - 32px)' }}>
-                  <p style={{ whiteSpace: 'pre-line' }}>{currentProduct.description}</p>
-                </Card>
-              </Col>
-            </Row>
-            
-            <div style={{ marginTop: 24 }}>
-              <h3 style={{ fontSize: 18, marginBottom: 16 }}>Hình ảnh sản phẩm</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                {previewImages.map((image, index) => (
-                  <Image
-                    key={image.id || index}
-                    src={image.url}
-                    alt={`Product image ${index + 1}`}
-                    width={150}
-                    height={150}
-                    style={{ objectFit: 'contain', border: '1px solid #f0f0f0' }}
-                  />
-                ))}
-                {previewImages.length === 0 && (
-                  <div style={{ 
-                    width: '100%',
-                    height: 150,
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    background: '#f5f5f5',
-                    borderRadius: 4
-                  }}>
-                    <span style={{ color: '#999' }}>Không có hình ảnh</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+    
     </div>
     </ConfigProvider>
   );

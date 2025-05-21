@@ -82,7 +82,7 @@ const AdminProductDetail = () => {
 
 
   const handleBack = () => {
-    navigate('/admin/products');
+    navigate('/admin/laptops');
   };
 
   const renderStars = (rating) => {
@@ -137,7 +137,7 @@ const AdminProductDetail = () => {
   return (
     <div className="product-detail-container" style={{ background: 'white', padding: '20px' }}>
       {/* Header with navigation */}
-      <div className="product-header" style={{ marginBottom: '20px' }}>
+      <div className="product-admin-header" style={{ marginBottom: '20px' }}>
         <Button 
           type="primary" 
           icon={<ArrowLeftOutlined />} 

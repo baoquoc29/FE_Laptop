@@ -21,6 +21,7 @@ import DiscountManagement from '../page/admin/discount/DiscountManagement';
 import UserManagement from '../page/admin/user/UserManagement';
 import ProductManagement from '../page/admin/product/ProductManagement';
 import CreateProduct from '../page/admin/product/CreateProduct';
+import OrderManagement from '../page/admin/order/OrderManagement';
 import AdminProductDetail from '../page/admin/product/AdminProductDetail';
 
 export function AppRouter() {
@@ -65,6 +66,7 @@ export function AppRouter() {
                 <Route path= "/categories" element={<CategoryManagement />} />
                 <Route path= "/message" element={<ChatManager />} />
                 <Route path= "/laptops/detail/:id" element={<AdminProductDetail />} />
+                <Route path="/orders" element={<OrderManagement />} />
               </Routes>
             </AdminLayout>
           </PrivateRoute>

@@ -199,7 +199,8 @@ const UserManagement = () => {
           icon={record.isBlocked ? <UnlockOutlined /> : <LockOutlined />}
           onClick={() => showBlockModal(record)}
           size="middle"
-          shape="circle"
+          title={record.isBlocked ? "Mở khóa" : "Khóa"}
+          style={{ borderRadius: '4px' }}
         />
       ),
       width: 80,

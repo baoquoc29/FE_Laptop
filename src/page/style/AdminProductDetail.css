@@ -4,7 +4,7 @@
   padding: 20px;
 }
 
-.product-header {
+.product-admin-header {
   display: flex;
   justify-content: flex-start; /* Thay đổi từ space-between sang flex-start */
   align-items: center;
