@@ -5,12 +5,14 @@ import { LoadingReducer } from './reducers/LoadingReducer';
 import {LocationReducer} from "./reducers/LocationReducer";
 import {ProductReducer} from "./reducers/ProductReducer";
 import {OrderReducer} from "./reducers/OrderReducer";
+import {MessageReducer} from "./reducers/MessageReducer";
 
 const rootReducer = combineReducers({
     UserReducer,
     LoadingReducer,
     ProductReducer,
     OrderReducer,
+    MessageReducer,
     LocationReducer,
 });
 

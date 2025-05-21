@@ -325,7 +325,7 @@ const CartPage = () => {
     };
 
     const handleContinueShopping = () => {
-        navigate("/products/search");
+        window.location.href = "/search";
     };
 
     if (loading && cartItems.length === 0) {
