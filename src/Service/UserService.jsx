@@ -20,12 +20,13 @@ export class UserService extends baseService {
     informationUser = (username) => {
         return this.get(`api/v1/auth/${username}`);
     }
-    adminGetAllUser = (keyword, page,size) => {
-        const params = new URLSearchParams({
-            keyword: keyword,
-            page: page,
-            size: size,
-        }).toString();
+    adminGetAllUser = (keyword, page, size, sortDir, sortBy) => {
+        const rawParams = { keyword, page, size, sortBy, sortDir };
+
+        const filteredParams = Object.fromEntries(
+            Object.entries(rawParams).filter(([_, value]) => value !== null && value !== undefined)
+        );
+        const params = new URLSearchParams(filteredParams).toString();
         return this.get(`api/v1/users/admin?${params}`, true);
     }
     blockUser = (userId) => {

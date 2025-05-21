@@ -90,7 +90,7 @@ const Sidebar = ({ isCollapsed }) => {
 
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar__header" style={{ justifyContent: isCollapsed ? 'center' : 'space-between' }} >
+      <div className="sidebar__header" style={{ justifyContent:'space-between' }} >
         <div className="logo">
           <Laptop size={24} className="logo-icon"/>
           {!isCollapsed && <span>Laptop Admin</span>}

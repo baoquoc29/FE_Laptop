@@ -37,7 +37,7 @@ const VoucherPage = () => {
         const fetchVouchers = async () => {
             try {
                 setLoading(true);
-                const response = await dispatch(getAllVoucher(currentPage, pageSize));
+                const response = await dispatch(getAllVoucher(null, null, null, null, null, currentPage, pageSize, null, null));
                 if (response && response.content) {
                     setVouchers(response.content);
                 } else {

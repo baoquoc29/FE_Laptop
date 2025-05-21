@@ -122,3 +122,53 @@ export const getUserBalance = (id) => async (dispatch) => {
     } catch (error) {
     }
 };
+
+export const adminGetAllUser = (keyword, page, size, sortDir, sortBy) => async (dispatch) => {
+    try {
+        const res = await userService.adminGetAllUser(keyword, page,size, sortDir, sortBy);
+        console.log("Users response:", res);
+        if (res && res.data && res.data.content) {
+            dispatch({
+                type: "SET_USERS",
+                payload: res.data,
+            });
+        } else {
+            console.log("No user data found.");
+        }
+        return res.data;
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error("API Error:", error.response.data.message);
+        } else {
+            console.error("Unexpected error:", error.message);
+        }
+        throw error;
+    }
+}
+
+export const blockUser = (userId) => async (dispatch) => {
+    try {
+        const res = await userService.blockUser(userId);
+        console.log("User block response:", res);
+        if (res && res.code === 200) {
+            dispatch({
+                type: "BLOCK_USER",
+                payload: {
+                    userId: userId,
+                    code: res.code
+                },
+            });
+        } else {
+            console.log("User block operation failed");
+        }
+        return res.code;
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error("API Error:", error.response.data.message);
+        } else {
+            console.error("Unexpected error:", error.message);
+        }
+        throw error;
+    }
+}
+
