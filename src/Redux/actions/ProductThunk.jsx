@@ -168,3 +168,45 @@ export const adminCreateProduct = (product) => async (dispatch) => {
         });
     }
 };
+
+export const adminUpdateProduct = (productId, product) => async (dispatch) => {
+    try {
+        dispatch({ type: "PRODUCT_ADMIN_UPDATE_REQUEST" });
+        const response = await productService.adminUpdateProduct(productId, product);
+        if (response && response.code === 200) {
+            dispatch({
+                type: "PRODUCT_ADMIN_UPDATE_SUCCESS",
+                payload: response.code,
+            });
+        } else {
+            console.log("Product update failed");
+        }
+        return response.code;
+    } catch (error) {
+        dispatch({
+            type: "PRODUCT_ADMIN_UPDATE_FAILURE",
+            payload: error.response?.data?.message || error.message
+        });
+    }
+};
+
+export const adminDeleteProduct = (productId) => async (dispatch) => {
+    try {
+        dispatch({ type: "PRODUCT_ADMIN_DELETE_REQUEST" });
+        const response = await productService.adminDeleteProduct(productId);
+        if (response && response.code === 204) {
+            dispatch({
+                type: "PRODUCT_ADMIN_DELETE_SUCCESS",
+                payload: response.code,
+            });
+        } else {
+            console.log("Product deletion failed");
+        }
+        return response.code;
+    } catch (error) {
+        dispatch({
+            type: "PRODUCT_ADMIN_DELETE_FAILURE",
+            payload: error.response?.data?.message || error.message
+        });
+    }
+};

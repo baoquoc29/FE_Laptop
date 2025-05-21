@@ -81,3 +81,45 @@ export const refundOrder = (orderId) => async (dispatch) => {
         throw error;
     }
 };
+
+export const getAllOrders = ( startDate, endDate, orderStatus, paymentMethod, paymentStatus, page, size, sortBy, sortDir) => async (dispatch) => {
+    try {
+        const response = await orderItemService.adminGetAllOrders(startDate, endDate, orderStatus, paymentMethod, paymentStatus, page, size, sortBy, sortDir);
+
+        if (response.data) {
+            dispatch({
+                type: "ADMIN_GET_ALL_ORDERS",
+                payload: response.data,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu order.");
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi gửi đơn hàng:");
+
+        throw error;
+    }
+};
+
+export const updateOrderStatus = (orderId, data) => async (dispatch) => {
+    try {
+        const response = await orderItemService.adminUpdateOrderStatus(orderId, data);
+
+        if (response) {
+            dispatch({
+                type: "UPDATE_ORDER_STATUS",
+                payload: response.code,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu order.");
+        }
+
+        return response.code;
+    } catch (error) {
+        console.error("❌ Lỗi khi gửi đơn hàng:");
+
+        throw error;
+    }
+};

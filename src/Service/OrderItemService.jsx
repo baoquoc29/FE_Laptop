@@ -30,5 +30,21 @@ export class OrderItemService extends baseService {
         return this.put(`api/v1/order/refund/${id}`,{});
     }
 
+    adminGetAllOrders = ( startDate,endDate, orderStatus, paymentMethod, paymentStatus, page, size, sortBy, sortDir ) => {
+        const rawParams = { startDate,endDate, orderStatus, paymentMethod, paymentStatus, page, size, sortBy, sortDir };
+
+        const filteredParams = Object.fromEntries(
+            Object.entries(rawParams).filter(([_, value]) => value !== null && value !== undefined)
+        );
+
+        const queryString = new URLSearchParams(filteredParams).toString();
+
+        return this.get(`api/v1/order/page?${queryString}`, true);
+    }
+
+    adminUpdateOrderStatus = (orderId, data) => {
+        return this.put(`api/v1/order/update/status/${orderId}`, data);
+    }
+
 }
 export const orderItemService = new OrderItemService ();
