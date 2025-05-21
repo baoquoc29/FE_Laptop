@@ -12,6 +12,7 @@ import {
   ShoppingCart
 } from 'lucide-react';
 import './sidebar.scss';
+import {MessageOutlined} from "@ant-design/icons";
 
 const Sidebar = ({ isCollapsed }) => {
   const location = useLocation();
@@ -60,6 +61,11 @@ const Sidebar = ({ isCollapsed }) => {
           path: '/admin/orders',
           name: 'Quản lý đơn hàng',
           icon: <ShoppingCart size={20} />
+        },
+        {
+          path: '/admin/message',
+          name: 'Hỗ trợ khách hàng',
+          icon: <MessageOutlined size={20} />
         }
       ]
     }

@@ -16,6 +16,7 @@ import DialogflowMessenger from "../page/client/DialogflowMessenger";
 import Dashboard from '../page/admin/dashboard/Dashbarđ';
 import BrandManagement from '../page/admin/brand/BrandManagement';
 import CategoryManagement from '../page/admin/category/CategoryManagement';
+import ChatManager from "../page/admin/ChatManager";
 
 export function AppRouter() {
    return (
@@ -52,6 +53,7 @@ export function AppRouter() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/brands" element={<BrandManagement />} />
                 <Route path= "/categories" element={<CategoryManagement />} />
+                  <Route path= "/message" element={<ChatManager />} />
               </Routes>
             </AdminLayout>
           </PrivateRoute>

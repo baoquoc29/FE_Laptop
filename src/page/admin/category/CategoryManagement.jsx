@@ -34,13 +34,13 @@ const CategoryManagement = () => {
       setLoading(true);
       // Updated API call to include sorting parameters
       const response = await dispatch(getAllCategoryPagination(
-        searchText, 
-        currentPage, 
+        searchText,
+        currentPage,
         pageSize,
         sortField,
         sortDirection
       ));
-      
+
       if (response && response.content) {
         setCategories(response.content);
         setTotalElements(response.totalElements);
@@ -101,9 +101,9 @@ const CategoryManagement = () => {
           status: 'done',
           url: category.imageUrl,
         }];
-        
+
         setFileList(imageFileList);
-        
+
         // Initialize both name and image fields
         form.setFieldsValue({
           name: category.name,
@@ -124,7 +124,7 @@ const CategoryManagement = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
+
       const formData = new FormData();
       formData.append('name', values.name);
       console.log("Form data prepared:", fileList);
@@ -246,14 +246,14 @@ const CategoryManagement = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
             onClick={() => showModal(record)}
           />
-          <Button 
-            danger 
-            icon={<DeleteOutlined />} 
+          <Button
+            danger
+            icon={<DeleteOutlined />}
             onClick={() => showDeleteModal(record)}
           />
         </Space>
@@ -297,34 +297,30 @@ const CategoryManagement = () => {
             headerColor: 'white',
           },
         },
-        token: {
-          fontFamily: "'Montserrat', 'Roboto', sans-serif",
-        }
       }}
     >
     <div style={{ padding: 24, background: '#fff'}}>
       {contextHolder}
-      
+
       {/* Title and Add Button */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 32
       }}>
-        <Title 
-          level={2} 
-          style={{ 
-            margin: 0, 
+        <Title
+          level={2}
+          style={{
+            margin: 0,
             fontWeight: 800, // Extra bold for emphasis
-            fontFamily: "'Montserrat', sans-serif" 
           }}
         >
           Quản lý thể loại laptop
         </Title>
-        
-        <Button 
-          type="primary" 
+
+        <Button
+          type="primary"
           icon={<PlusOutlined />}
           onClick={() => showModal()}
           size="large"
@@ -333,11 +329,11 @@ const CategoryManagement = () => {
           Thêm thể loại
         </Button>
       </div>
-      
+
       {/* Search and Filter */}
-      <div style={{ 
+      <div style={{
         marginBottom: 24,
-        display: 'flex', 
+        display: 'flex',
         gap: '16px' // Increased spacing
       }}>
         <Input
@@ -349,9 +345,9 @@ const CategoryManagement = () => {
           size="large"
         />
       </div>
-      
+
       {/* Custom Pagination and Sorting Controls */}
-      <div style={{ 
+      <div style={{
         marginBottom: 16,
         display: 'flex',
         justifyContent: 'space-between',
@@ -359,8 +355,8 @@ const CategoryManagement = () => {
       }}>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <span>Sắp xếp theo:</span>
-          <Select 
-            value={sortField} 
+          <Select
+            value={sortField}
             onChange={handleSortFieldChange}
             style={{ width: 150 }}
             size="middle"
@@ -369,8 +365,8 @@ const CategoryManagement = () => {
             <Option value="updatedAt">Ngày cập nhật</Option>
             <Option value="name">Tên thể loại</Option>
           </Select>
-          
-          <Button 
+
+          <Button
             onClick={handleSortDirectionChange}
             icon={sortDirection === 'asc' ? <SortAscendingOutlined /> : <SortDescendingOutlined />}
             size="middle"
@@ -381,8 +377,8 @@ const CategoryManagement = () => {
 
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <span>Hiển thị:</span>
-          <Select 
-            value={pageSize} 
+          <Select
+            value={pageSize}
             onChange={(value) => handlePageSizeChange(currentPage, value)}
             style={{ width: 80 }}
             size="middle"
@@ -397,9 +393,9 @@ const CategoryManagement = () => {
       </div>
 
       {/* Table without pagination */}
-      <Table 
-        columns={columns} 
-        dataSource={categories} 
+      <Table
+        columns={columns}
+        dataSource={categories}
         rowKey="id"
         loading={loading}
         pagination={false} // Disable built-in pagination
@@ -414,9 +410,9 @@ const CategoryManagement = () => {
           total={totalElements}
           onChange={handlePageChange}
           showQuickJumper={true}
-          locale={{ 
-            jump_to: "Đến trang", 
-            page: "" 
+          locale={{
+            jump_to: "Đến trang",
+            page: ""
           }}
           showSizeChanger={false}
           showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} mục`}
@@ -471,7 +467,7 @@ const CategoryManagement = () => {
         okText="Xóa"
         cancelText="Hủy"
         confirmLoading={loading}
-        okButtonProps={{ danger: true }} 
+        okButtonProps={{ danger: true }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <ExclamationCircleFilled style={{ color: '#ff4d4f', fontSize: '22px' }} />

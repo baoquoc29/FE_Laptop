@@ -55,10 +55,17 @@ const HeroSection = () => {
                                         <h1 className="hero-title">{banner.title}</h1>
                                         <p className="hero-subtitle">{banner.subtitle}</p>
                                         <div className="hero-buttons">
-                                            <Button type="primary" size="large" className="primary-button">
+                                            <Button type="primary" size="large" className="primary-button"
+                                                    onClick={() => {
+                                                        window.location.href = "/search";
+                                                    }}>
                                                 {banner.buttonText}
                                             </Button>
-                                            <Button size="large" className="secondary-button">
+                                            <Button size="large" className="secondary-button"
+                                                    onClick={() => {
+                                                       window.location.href = "/search";
+                                                    }}
+                                            >
                                                 Tìm hiểu thêm
                                             </Button>
                                         </div>

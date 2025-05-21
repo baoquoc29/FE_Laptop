@@ -10,7 +10,9 @@ import Features from "./Features";
 import HeroSection from "./HeroSection";
 import TestimonialsNewsletter from "./TestimonialsNewsletter";
 import NavigationHeader from "./Navigation";
-
+import ChatBox from "./SupportChat";
+import khImg from '../../assets/kh.jpg'; // Điều chỉnh đường dẫn nếu cần
+import "../style/HomeScreen.css";
 const HomeScreen = () => {
     const { isAuthenticated } = useSelector((state) => state.UserReducer);
     const [userRole, setUserRole] = useState("");
@@ -31,6 +33,7 @@ const HomeScreen = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
     return (
         <div className="home-screen-container">
             <HeroSection></HeroSection>
@@ -38,7 +41,10 @@ const HomeScreen = () => {
             <ProductSections></ProductSections>
             <TestimonialsNewsletter></TestimonialsNewsletter>
             <Features></Features>
-
+            <div className="chat-icon" onClick={toggleChatBox}>
+                <img src={khImg} alt="Chat Icon"/>
+            </div>
+            <ChatBox showChatBox={showChatBox} toggleChatBox={toggleChatBox}/>
         </div>
     );
 };
