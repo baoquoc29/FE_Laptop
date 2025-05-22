@@ -470,7 +470,8 @@ const ChatAdmin = () => {
                                                                 marginTop: "4px",
                                                                 color: msg.senderId !== activeUser ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.4)"
                                                             }}>
-                                                                {new Date(msg.createdAt).toLocaleTimeString()}
+                                                                {new Date(msg.createdAt).toLocaleString("en-US", { timeZone: "Asia/Bangkok" })}
+
                                                             </div>
                                                         </div>
                                                     </div>
