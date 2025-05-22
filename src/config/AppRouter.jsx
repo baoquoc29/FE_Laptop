@@ -23,6 +23,7 @@ import ProductManagement from '../page/admin/product/ProductManagement';
 import CreateProduct from '../page/admin/product/CreateProduct';
 import OrderManagement from '../page/admin/order/OrderManagement';
 import AdminProductDetail from '../page/admin/product/AdminProductDetail';
+import UpdateProduct from '../page/admin/product/UpdateProduct';
 
 export function AppRouter() {
    return (
@@ -63,6 +64,7 @@ export function AppRouter() {
                 <Route path="/users" element={<UserManagement />} />
                 <Route path="/laptops" element={<ProductManagement />} />
                 <Route path="/laptops/create" element={<CreateProduct />} />
+                <Route path="/laptops/update/:id" element={<UpdateProduct />} />
                 <Route path= "/categories" element={<CategoryManagement />} />
                 <Route path= "/message" element={<ChatManager />} />
                 <Route path= "/laptops/detail/:id" element={<AdminProductDetail />} />

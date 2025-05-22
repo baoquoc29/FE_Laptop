@@ -155,7 +155,7 @@ const ProductManagement = () => {
 
   // Hàm xử lý chuyển hướng đến trang sửa sản phẩm
   const handleEditProduct = (productId) => {
-    navigate(`/admin/laptops/edit/${productId}`);
+    navigate(`/admin/laptops/update/${productId}`);
   };
   const handleDetailProduct = (productId) => {
     navigate(`/admin/laptops/detail/${productId}`);
