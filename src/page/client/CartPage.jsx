@@ -399,7 +399,7 @@ const CartPage = () => {
                                             />
                                         </div>
                                         <div className="product-details">
-                                            <div className="product-header">
+                                            <div className="product-header-cart">
                                                 <h3 className="product-name">{product.productName + " " + product.productCode}</h3>
                                                 <p className="product-price">
                                                     {(product.basePrice * product.quantity).toLocaleString()}₫
