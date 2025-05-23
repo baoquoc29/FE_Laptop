@@ -45,6 +45,9 @@ export class OrderItemService extends baseService {
     adminUpdateOrderStatus = (orderId, data) => {
         return this.put(`api/v1/order/update/status/${orderId}`, data);
     }
+    revenueByMonth = (year) => {
+        return this.get(`api/v1/revenue/month/${year}`,true);
+    }
 
 }
 export const orderItemService = new OrderItemService ();

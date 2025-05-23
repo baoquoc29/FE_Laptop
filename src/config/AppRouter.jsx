@@ -24,6 +24,7 @@ import CreateProduct from '../page/admin/product/CreateProduct';
 import OrderManagement from '../page/admin/order/OrderManagement';
 import AdminProductDetail from '../page/admin/product/AdminProductDetail';
 import UpdateProduct from '../page/admin/product/UpdateProduct';
+import DashboardPage from "../page/admin/dashboard/Dashbarđ";
 
 export function AppRouter() {
    return (
@@ -57,7 +58,7 @@ export function AppRouter() {
           <PrivateRoute >
             <AdminLayout>
               <Routes>
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/brands" element={<BrandManagement />} />
                 <Route path="/categories" element={<CategoryManagement />} />
                 <Route path="/discounts" element={<DiscountManagement />} />

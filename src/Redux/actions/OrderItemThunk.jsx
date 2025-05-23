@@ -123,3 +123,24 @@ export const updateOrderStatus = (orderId, data) => async (dispatch) => {
         throw error;
     }
 };
+
+export const revenueByMonth = (year) => async (dispatch) => {
+    try {
+        const response = await orderItemService.revenueByMonth(year);
+
+        if (response) {
+            dispatch({
+                type: "REVENUE",
+                payload: response.data,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu order.");
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi gửi đơn hàng:");
+
+        throw error;
+    }
+};
