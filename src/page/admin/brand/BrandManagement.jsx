@@ -231,7 +231,19 @@ const BrandManagement = () => {
       if (!dateString) return '-';
       return dayjs(dateString).format('DD/MM/YYYY HH:mm');
     };
+  const colors = [
+    'magenta', 'red', 'volcano', 'orange', 'gold', 'lime',
+    'green', 'cyan', 'blue', 'geekblue', 'purple'
+  ];
 
+  function getColorByName(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  }
   const columns = [
     {
       title: 'STT',
@@ -264,7 +276,7 @@ const BrandManagement = () => {
       title: 'Quốc gia',
       dataIndex: 'countryName',
       key: 'country',
-      render: (country) => <Tag color="blue">{country}</Tag>,
+      render: (country) => <Tag color={getColorByName(country)}>{country}</Tag>,
       width: 120,
     },
     {

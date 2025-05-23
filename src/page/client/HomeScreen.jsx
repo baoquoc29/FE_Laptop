@@ -52,7 +52,6 @@ const HomeScreen = () => {
     return (
         <div className="home-screen-container">
             <HeroSection></HeroSection>
-            <FeaturedCategories></FeaturedCategories>
             <ProductSections></ProductSections>
             <TestimonialsNewsletter></TestimonialsNewsletter>
             <Features></Features>
