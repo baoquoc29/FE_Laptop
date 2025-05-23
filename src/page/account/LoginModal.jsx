@@ -82,7 +82,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister, onLoginSuccess }) => 
             // Successful login
             if (localStorage.getItem('accessToken')) {
                 onLoginSuccess?.(result); // Pass user data to parent
-                window.location.reload();
+                window.location.href = "/admin/dashboard";
                 onClose();
             } else {
                 throw new Error('Không nhận được token đăng nhập');
