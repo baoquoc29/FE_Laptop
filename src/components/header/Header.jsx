@@ -158,7 +158,7 @@ const Header = () => {
                Rút tiền từ ví TechWallets
             </Menu.Item>
             <Menu.Item
-                key="wallet"
+                key="wallet-history"
                 icon={<HistoryIcon size={16} />}
                 onClick={() => window.location.href = `/wallet-history/${userData.id}`}
             >
