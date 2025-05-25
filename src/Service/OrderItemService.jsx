@@ -49,5 +49,9 @@ export class OrderItemService extends baseService {
         return this.get(`api/v1/revenue/month/${year}`,true);
     }
 
+    acceptRefund = (id) => {
+        return this.put(`api/v1/order/accept/refund/${id}`,{});
+    }
+
 }
 export const orderItemService = new OrderItemService ();

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Table, Input, Button, Space, Modal, message, ConfigProvider, Select, Typography, Pagination, Tag } from 'antd';
 import { SearchOutlined, LockOutlined, UnlockOutlined, SortAscendingOutlined, SortDescendingOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { adminGetAllUser, blockUser } from '../../../Redux/actions/UserThunk';
 import dayjs from 'dayjs';
+import {NotificationContext} from "../../../components/NotificationProvider";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -24,7 +25,7 @@ const UserManagement = () => {
   // Other state variables
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
-  const [messageApi, contextHolder] = message.useMessage();
+  const notification = useContext(NotificationContext);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
 
@@ -44,11 +45,17 @@ const UserManagement = () => {
         setUsers(response.content);
         setTotalElements(response.totalElements);
       } else {
-        messageApi.warning("Không có người dùng nào");
+        notification.warning({
+          message: "Không có người dùng nào",
+          description: "Vui lòng kiểm tra lại điều kiện tìm kiếm hoặc thử lại sau."
+        });
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-      messageApi.error("Đã xảy ra lỗi khi tải danh sách người dùng");
+      notification.error({
+        message: "Đã xảy ra lỗi",
+        description: "Không thể tải danh sách người dùng."
+      });
     } finally {
       setLoading(false);
     }
@@ -112,14 +119,23 @@ const UserManagement = () => {
 
       if (response === 200) {
         const actionText = userToToggleBlock.isBlocked ? 'mở khóa' : 'khóa';
-        messageApi.success(`${actionText} tài khoản thành công`);
+        notification.success({
+          message: `${actionText} tài khoản thành công`,
+          description: `Tài khoản của ${userToToggleBlock.fullName} đã được ${actionText}.`
+        });
         fetchUsers();
       } else {
-        messageApi.error('Thao tác thất bại');
+        notification.error({
+          message: "Thao tác thất bại",
+          description: "Không thể thực hiện thao tác này."
+        });
       }
     } catch (error) {
       console.error("Error blocking/unblocking user:", error);
-      messageApi.error('Đã xảy ra lỗi khi thực hiện thao tác');
+      notification.error({
+        message: "Đã xảy ra lỗi",
+        description: "Không thể thực hiện thao tác này."
+      });
     } finally {
       setLoading(false);
       setIsBlockModalVisible(false);
@@ -223,7 +239,6 @@ const UserManagement = () => {
       }}
     >
     <div style={{ padding: 24, background: '#fff'}}>
-      {contextHolder}
       
       {/* Title */}
       <div style={{ 
@@ -358,7 +373,6 @@ const UserManagement = () => {
         okText={userToToggleBlock?.isBlocked ? "Mở khóa" : "Khóa"}
         cancelText="Hủy"
         confirmLoading={loading}
-        okButtonProps={{ danger: true }} 
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <ExclamationCircleFilled style={{ color: userToToggleBlock?.isBlocked ? '#1890ff' : '#ff4d4f', fontSize: '22px' }} />

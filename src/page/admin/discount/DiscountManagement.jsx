@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Table, Input, Button, Space, Modal, Form, message, ConfigProvider, Select, Typography, Pagination, InputNumber, DatePicker, Switch, Tag } from 'antd';
+import { useState, useEffect, useContext } from 'react';
+import { Table, Input, Button, Space, Modal, Form, ConfigProvider, Select, Typography, Pagination, InputNumber, DatePicker, Switch, Tag } from 'antd';
 import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SortAscendingOutlined, SortDescendingOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { getAllVoucher, createVoucher, updateVoucher, deleteVoucher } from '../../../Redux/actions/VoucherThunk';
 import dayjs from 'dayjs';
+import { NotificationContext } from '../../../components/NotificationProvider';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -30,8 +31,9 @@ const VoucherManagement = () => {
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('asc');
   const [form] = Form.useForm();
-  const [messageApi, contextHolder] = message.useMessage();
+  const notification = useContext(NotificationContext);
   const [loading, setLoading] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false); // Add this state for form submission
   const dispatch = useDispatch();
 
   const fetchVouchers = async () => {
@@ -57,11 +59,17 @@ const VoucherManagement = () => {
         setVouchers(response.content);
         setTotalElements(response.totalElements);
       } else {
-        messageApi.warning("Không có mã giảm giá nào");
+        notification.warning({
+          message: "Không có mã giảm giá nào",
+          description: "Không tìm thấy mã giảm giá nào với tiêu chí tìm kiếm đã nhập."
+        });
       }
     } catch (error) {
       console.error("Error fetching vouchers:", error);
-      messageApi.error("Đã xảy ra lỗi khi tải mã giảm giá");
+      notification.error({
+        message: "Đã xảy ra lỗi",
+        description: "Không thể tải danh sách mã giảm giá."
+      });
     } finally {
       setLoading(false);
     }
@@ -143,6 +151,7 @@ const VoucherManagement = () => {
 
   const handleSubmit = async () => {
     try {
+      setFormSubmitting(true); // Set loading state when form submission starts
       const values = await form.validateFields();
       
       const voucherData = {
@@ -161,30 +170,53 @@ const VoucherManagement = () => {
         const response = await dispatch(updateVoucher(currentVoucher.id, voucherData));
         console.log("Update response:", response);
         if (response === 200) {
-          messageApi.success('Cập nhật mã giảm giá thành công');
+          notification.success({
+            message: 'Cập nhật mã giảm giá thành công',
+            description: 'Mã giảm giá đã được cập nhật thành công.'
+          });
           fetchVouchers();
           setIsModalVisible(false);
         } else if (response === 409) {
-          messageApi.error('Mã giảm giá đã tồn tại');
+          notification.error({
+            message: 'Mã giảm giá đã tồn tại',
+            description: 'Vui lòng kiểm tra lại thông tin và thử lại.'
+          });
         } else {
-          messageApi.error('Cập nhật mã giảm giá thất bại');
+          notification.error({
+            message: 'Cập nhật mã giảm giá thất bại',
+            description: 'Đã xảy ra lỗi khi cập nhật mã giảm giá.'
+          });
         }
       } else {
         // Create new voucher
         const response = await dispatch(createVoucher(voucherData));
         if (response === 201) {
-          messageApi.success('Thêm mã giảm giá thành công');
+          notification.success({
+            message: 'Thêm mã giảm giá thành công',
+            description: 'Mã giảm giá đã được thêm thành công.'
+          });
           fetchVouchers();
           setIsModalVisible(false);
         } else if (response === 409) {
-          messageApi.error('Mã giảm giá đã tồn tại');
+          notification.error({
+            message: 'Mã giảm giá đã tồn tại',
+            description: 'Vui lòng kiểm tra lại thông tin và thử lại.'
+          });
         } else {
-          messageApi.error('Thêm mã giảm giá thất bại');
+          notification.error({
+            message: 'Thêm mã giảm giá thất bại',
+            description: 'Đã xảy ra lỗi khi thêm mã giảm giá.'
+          });
         }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      messageApi.error('Đã xảy ra lỗi khi xử lý yêu cầu');
+      notification.error({
+        message: 'Đã xảy ra lỗi',
+        description: 'Không thể xử lý yêu cầu này.'
+      });
+    } finally {
+      setFormSubmitting(false); // Reset loading state when form submission completes
     }
   };
 
@@ -209,14 +241,23 @@ const VoucherManagement = () => {
       const response = await dispatch(deleteVoucher(voucherToDelete.id));
 
       if (response === 204) {
-        messageApi.success('Xóa mã giảm giá thành công');
+        notification.success({
+          message: 'Xóa mã giảm giá thành công',
+          description: 'Mã giảm giá đã được xóa thành công.'
+        });
         fetchVouchers();
       } else {
-        messageApi.error('Xóa mã giảm giá thất bại');
+        notification.error({
+          message: 'Xóa mã giảm giá thất bại',
+          description: 'Không thể xóa mã giảm giá này.'
+        });
       }
     } catch (error) {
       console.error("Error deleting voucher:", error);
-      messageApi.error('Đã xảy ra lỗi khi xóa');
+      notification.error({
+        message: 'Đã xảy ra lỗi',
+        description: 'Không thể xóa mã giảm giá này.'
+      });
     } finally {
       setLoading(false);
       setIsDeleteModalVisible(false);
@@ -341,7 +382,6 @@ const VoucherManagement = () => {
       }}
     >
     <div style={{ padding: 24, background: '#fff'}}>
-      {contextHolder}
       
       {/* Title and Add Button */}
       <div style={{ 
@@ -504,7 +544,14 @@ const VoucherManagement = () => {
         width={700}
         okText={currentVoucher ? "Cập nhật" : "Thêm mới"}
         cancelText="Hủy"
-        confirmLoading={loading}
+        confirmLoading={formSubmitting}
+        okButtonProps={{ 
+          loading: formSubmitting, 
+          disabled: formSubmitting 
+        }}
+        cancelButtonProps={{
+          disabled: formSubmitting
+        }}
       >
         <Form form={form} layout="vertical">
           <Form.Item
