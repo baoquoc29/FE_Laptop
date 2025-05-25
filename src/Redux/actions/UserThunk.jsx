@@ -191,3 +191,22 @@ export const sendRequestDrawl = (body) => async (dispatch) => {
         throw error; // Truyền lỗi cho phần gọi useEffect
     }
 };
+export const getAllDrawl = (startDate, endDate, page, size, sortBy, sortDirection) => async (dispatch) => {
+    try {
+        const res = await userService.userGetAllWithdrawals(startDate, endDate, page, size, sortBy, sortDirection);
+
+        if (res) {
+            dispatch({
+                type: "DRAWL_LIST",
+                payload: res.data,
+            });
+            return res.data;
+        } else {
+            console.log("Không có dữ liệu trả về từ API tạo URL thanh toán");
+            throw new Error('Dữ liệu không hợp lệ');
+        }
+    } catch (error) {
+        console.error("Đã xảy ra lỗi:", error);
+        throw error; // Truyền lỗi cho phần gọi useEffect
+    }
+};

@@ -12,7 +12,7 @@ import {
     LogOut,
     TicketPercent,
     Key,
-    History,
+    History, HistoryIcon,
 } from 'lucide-react';
 import './Header.css';
 import logo from '../../assets/log.jpg';
@@ -156,6 +156,13 @@ const Header = () => {
                 onClick={() => window.location.href = `/wallet/${userData.id}`}
             >
                Rút tiền từ ví TechWallets
+            </Menu.Item>
+            <Menu.Item
+                key="wallet"
+                icon={<HistoryIcon size={16} />}
+                onClick={() => window.location.href = `/wallet-history/${userData.id}`}
+            >
+                Lịch sử rút tiền
             </Menu.Item>
             <Menu.Item
                 key="change-password"
