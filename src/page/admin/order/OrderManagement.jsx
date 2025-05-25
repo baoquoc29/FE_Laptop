@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { 
   Table, 
   Button, 
@@ -7,7 +7,6 @@ import {
   Col, 
   Modal, 
   Form, 
-  message, 
   Typography, 
   Select, 
   Card, 
@@ -27,11 +26,13 @@ import {
   SortAscendingOutlined, 
   SortDescendingOutlined,
   ExclamationCircleFilled,
-  CalendarOutlined // Thêm import icon Calendar
+  CalendarOutlined, // Thêm import icon Calendar
+  CheckCircleOutlined
 } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
-import { getAllOrders, updateOrderStatus } from "../../../Redux/actions/OrderItemThunk";
+import { getAllOrders, updateOrderStatus, acceptRefund } from "../../../Redux/actions/OrderItemThunk";
 import dayjs from 'dayjs';
+import { NotificationContext } from '../../../components/NotificationProvider';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -48,16 +49,39 @@ const getStatusColor = (status) => {
   };
   return statusColors[status] || "default";
 };
-
+// Helper function để chuyển đổi OrderStatus sang tiếng Việt
+const getStatusText = (status) => {
+  const statusMap = {
+    CANCELLED: "Đã hủy",
+    COMPLETED: "Hoàn thành",
+    CONFIRMED: "Đã xác nhận",
+    PENDING: "Đang xử lý",
+    SHIPPED: "Đang giao hàng"
+  };
+  return statusMap[status] || status;
+};
 // Helper function to map payment status to color
 const getPaymentStatusColor = (status) => {
   const statusColors = {
     FAILED: "red",
     PAID: "green",
     REFUNDED: "orange",
+    REFUNDED_SUCCESSFUL: "cyan",
     UNPAID: "gold"
   };
   return statusColors[status] || "default";
+};
+
+// Helper function để chuyển đổi PaymentStatus sang tiếng Việt
+const getPaymentStatusText = (status) => {
+  const statusMap = {
+    FAILED: "Thất bại",
+    PAID: "Đã thanh toán",
+    REFUNDED: "Yêu cầu hoàn tiền",
+    REFUNDED_SUCCESSFUL: "Đã hoàn tiền",
+    UNPAID: "Chưa thanh toán"
+  };
+  return statusMap[status] || status;
 };
 
 // Helper function to format address
@@ -90,13 +114,19 @@ const OrderManagement = () => {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [isStatusUpdateVisible, setIsStatusUpdateVisible] = useState(false);
   
+  // Add this new state
+  const [isRefundModalVisible, setIsRefundModalVisible] = useState(false);
+  const [orderToRefund, setOrderToRefund] = useState(null);
+  
   // Form for status update
   const [form] = Form.useForm();
   const dispatch = useDispatch();
-  const [messageApi, contextHolder] = message.useMessage();
-
+  
   // Thêm state cho lọc theo ngày tháng
   const [dateRange, setDateRange] = useState(null);
+  
+  // Replace messageApi with notification context
+  const notification = useContext(NotificationContext);
   
   // Load order data
   useEffect(() => {
@@ -132,10 +162,14 @@ const OrderManagement = () => {
         setOrders(res.content);
         setTotalElements(res.totalElements);
       } else {
-        messageApi.warning("Không có đơn hàng nào");
+        notification.warning({
+          message: "Không có đơn hàng nào"
+        });
       }
     } catch (error) {
-      messageApi.error("Đã xảy ra lỗi khi tải dữ liệu");
+      notification.error({
+        message: "Đã xảy ra lỗi khi tải dữ liệu"
+      });
       console.error(error);
     } finally {
       setLoading(false);
@@ -164,6 +198,23 @@ const OrderManagement = () => {
   };
 
   const handleStatusUpdateModal = (order) => {
+    // Check if the order is cancelled or completed
+    if (order.status === "CANCELLED") {
+      notification.warning({
+        message: "Không thể cập nhật",
+        description: "Đơn hàng đã bị hủy không thể cập nhật trạng thái."
+      });
+      return;
+    }
+    
+    if (order.status === "COMPLETED") {
+      notification.warning({
+        message: "Không thể cập nhật",
+        description: "Đơn hàng đã hoàn thành không thể cập nhật trạng thái."
+      });
+      return;
+    }
+    
     setCurrentOrder(order);
     form.setFieldsValue({ status: order.status });
     setIsStatusUpdateVisible(true);
@@ -173,18 +224,43 @@ const OrderManagement = () => {
     try {
       const values = await form.validateFields();
       
+      // Additional check to ensure the order is not cancelled or completed
+      if (currentOrder.status === "CANCELLED") {
+        notification.warning({
+          message: "Không thể cập nhật",
+          description: "Đơn hàng đã bị hủy không thể cập nhật trạng thái."
+        });
+        setIsStatusUpdateVisible(false);
+        return;
+      }
+      
+      if (currentOrder.status === "COMPLETED") {
+        notification.warning({
+          message: "Không thể cập nhật",
+          description: "Đơn hàng đã hoàn thành không thể cập nhật trạng thái."
+        });
+        setIsStatusUpdateVisible(false);
+        return;
+      }
+      
       setLoading(true);
       const response = await dispatch(updateOrderStatus(currentOrder.id, { status: values.status }));
       
-      if (response) {
-        messageApi.success("Cập nhật trạng thái đơn hàng thành công");
+      if (response === 200) {
+        notification.success({
+          message: "Cập nhật trạng thái đơn hàng thành công"
+        });
         fetchOrders();
         setIsStatusUpdateVisible(false);
       } else {
-        messageApi.error("Không thể cập nhật trạng thái đơn hàng");
+        notification.error({
+          message: "Không thể cập nhật trạng thái đơn hàng"
+        });
       }
     } catch (error) {
-      messageApi.error("Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng");
+      notification.error({
+        message: "Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng"
+      });
       console.error(error);
     } finally {
       setLoading(false);
@@ -257,15 +333,35 @@ const OrderManagement = () => {
       dataIndex: "paymentMethod",
       key: "paymentMethod",
       width: 110,
-      render: (method) => <span>{method}</span>,
+      render: (method) => {
+        const methodMap = {
+          "COD": "Thanh toán khi nhận hàng",
+          "VNPAY": "VN Pay",
+          "IN_APP": "Thanh toán trong ứng dụng"
+        };
+        return <span>{methodMap[method] || method}</span>;
+      },
     },
     {
       title: "Trạng thái thanh toán",
       dataIndex: "paymentStatus",
       key: "paymentStatus",
-      width: 120,
+      width: 150, // Mở rộng độ rộng để đủ chứa chữ tiếng Việt
       render: (status) => (
-        <Tag color={getPaymentStatusColor(status)}>{status}</Tag>
+        <Tag color={getPaymentStatusColor(status)}>
+          {getPaymentStatusText(status)}
+        </Tag>
+      ),
+    },
+    {
+      title: "Trạng thái đơn hàng",
+      dataIndex: "status",
+      key: "status",
+      width: 150,
+      render: (status) => (
+        <Tag color={getStatusColor(status)}>
+          {getStatusText(status)}
+        </Tag>
       ),
     },
     {
@@ -282,19 +378,40 @@ const OrderManagement = () => {
       width: 150,
       render: (date) => date ? formatDate(date) : "-",
     },
+
+    // Thêm cột tổng tiền vào cấu hình columns - thêm vào trước cột "Thao tác"
     {
-      title: "Trạng thái đơn hàng",
-      dataIndex: "status",
-      key: "status",
-      width: 120,
-      render: (status) => (
-        <Tag color={getStatusColor(status)}>{status}</Tag>
-      ),
+      title: "Tổng tiền",
+      key: "totalAmount",
+      width: 150,
+      render: (_, record) => {
+        // Tính tổng tiền sản phẩm
+        const subtotal = record.orderItems?.reduce(
+          (total, item) => total + (item.priceAtOrderTime * item.quantity), 0
+        ) || 0;
+        
+        // Tính giảm giá nếu có
+        const discountAmount = record.discount ? calculateDiscountAmount(record) : 0;
+        
+        // Tổng thanh toán
+        const total = subtotal - discountAmount;
+        
+        return (
+          <span style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
+            {new Intl.NumberFormat('vi-VN', { 
+              style: 'currency', 
+              currency: 'VND',
+              maximumFractionDigits: 0
+            }).format(total)}
+          </span>
+        );
+      },
     },
+    
     {
       title: "Thao tác",
       key: "actions",
-      width: 100,
+      width: 140,
       align: 'center',
       render: (_, record) => (
         <Space>
@@ -306,18 +423,90 @@ const OrderManagement = () => {
             title="Xem chi tiết"
             style={{ borderRadius: '4px' }}
           />
-          <Button 
-            type="primary"
-            style={{ background: '#52c41a', borderRadius: '4px' }}
-            icon={<EditOutlined />}
-            onClick={() => handleStatusUpdateModal(record)}
-            size="middle"
-            title="Cập nhật trạng thái"
-          />
+          {record.status !== "CANCELLED" && record.status !== "COMPLETED" && (
+            <Button 
+              type="primary"
+              style={{ background: '#52c41a', borderRadius: '4px' }}
+              icon={<EditOutlined />}
+              onClick={() => handleStatusUpdateModal(record)}
+              size="middle"
+              title="Cập nhật trạng thái"
+            />
+          )}
+          {record.paymentStatus === "REFUNDED" && (
+            <Button 
+              type="primary"
+              style={{ background: '#1890ff', borderRadius: '4px' }}
+              icon={<CheckCircleOutlined />}
+              onClick={() => showRefundModal(record)}
+              size="middle"
+              title="Chấp nhận hoàn tiền"
+            />
+          )}
         </Space>
       ),
     },
   ];
+
+  // Thêm hàm tính giá trị giảm giá
+  const calculateDiscountAmount = (order) => {
+    if (!order.discount) return 0;
+
+    const { discount } = order;
+    const subtotal = order.orderItems.reduce(
+      (total, item) => total + item.priceAtOrderTime * item.quantity,
+      0
+    );
+
+    if (discount.discountType === "PERCENT") {
+      // Giảm giá theo phần trăm
+      return (subtotal * discount.discountValue) / 100;
+    } else if (discount.discountType === "FIXED") {
+      // Giảm giá cố định
+      return discount.discountValue;
+    }
+    
+    return 0;
+  };
+
+  // Add this new function to handle refund modal
+  const showRefundModal = (order) => {
+    setOrderToRefund(order);
+    setIsRefundModalVisible(true);
+  };
+  
+  // Add this new function to handle refund acceptance
+  const handleAcceptRefund = async () => {
+    if (!orderToRefund) return;
+    
+    try {
+      setLoading(true);
+      const response = await dispatch(acceptRefund(orderToRefund.id));
+      
+      if (response === 200) {
+        notification.success({
+          message: "Hoàn tiền thành công",
+          description: `Đơn hàng #${orderToRefund.id} đã được hoàn tiền thành công.`
+        });
+        fetchOrders();
+      } else {
+        notification.error({
+          message: "Hoàn tiền thất bại",
+          description: "Không thể hoàn tiền cho đơn hàng này."
+        });
+      }
+    } catch (error) {
+      console.error("Error accepting refund:", error);
+      notification.error({
+        message: "Đã xảy ra lỗi",
+        description: "Không thể xử lý yêu cầu hoàn tiền."
+      });
+    } finally {
+      setLoading(false);
+      setIsRefundModalVisible(false);
+      setOrderToRefund(null);
+    }
+  };
 
   return (
     <ConfigProvider
@@ -329,9 +518,8 @@ const OrderManagement = () => {
           },
         },
       }}
-    >
+  >
       <div style={{ padding: 24, background: '#fff' }}>
-        {contextHolder}
         
         {/* Title */}
         <div style={{ 
@@ -369,47 +557,47 @@ const OrderManagement = () => {
             size="large"
           />
           
-          <Select
-            placeholder="Phương thức thanh toán"
-            style={{ width: 180 }}
-            allowClear
-            onChange={(value) => setPaymentMethod(value)}
-            value={paymentMethod}
-            size="large"
-          >
-            <Option value="COD">COD</Option>
-            <Option value="VNPAY">VNPAY</Option>
-            <Option value="IN_APP">IN_APP</Option>
-          </Select>
+        <Select
+          placeholder="Phương thức thanh toán"
+          style={{ width: 180 }}
+          allowClear
+          onChange={(value) => setPaymentMethod(value)}
+          value={paymentMethod}
+          size="large"
+        >
+          <Option value="COD">Thanh toán khi nhận hàng</Option>
+          <Option value="VNPAY">VN Pay</Option>
+          <Option value="IN_APP">Thanh toán trong ứng dụng</Option>
+        </Select>
+        <Select
+          placeholder="Trạng thái thanh toán"
+          style={{ width: 180 }}
+          allowClear
+          onChange={(value) => setPaymentStatus(value)}
+          value={paymentStatus}
+          size="large"
+        >
+          <Option value="FAILED">Thất bại</Option>
+          <Option value="PAID">Đã thanh toán</Option>
+          <Option value="REFUNDED">Yêu cầu hoàn tiền</Option>
+          <Option value="REFUNDED_SUCCESSFUL">Đã hoàn tiền</Option>
+          <Option value="UNPAID">Chưa thanh toán</Option>
+        </Select>
           
-          <Select
-            placeholder="Trạng thái thanh toán"
-            style={{ width: 180 }}
-            allowClear
-            onChange={(value) => setPaymentStatus(value)}
-            value={paymentStatus}
-            size="large"
-          >
-            <Option value="FAILED">FAILED</Option>
-            <Option value="PAID">PAID</Option>
-            <Option value="REFUNDED">REFUNDED</Option>
-            <Option value="UNPAID">UNPAID</Option>
-          </Select>
-          
-          <Select
-            placeholder="Trạng thái đơn hàng"
-            style={{ width: 180 }}
-            allowClear
-            onChange={(value) => setOrderStatus(value)}
-            value={orderStatus}
-            size="large"
-          >
-            <Option value="CANCELLED">CANCELLED</Option>
-            <Option value="COMPLETED">COMPLETED</Option>
-            <Option value="CONFIRMED">CONFIRMED</Option>
-            <Option value="PENDING">PENDING</Option>
-            <Option value="SHIPPED">SHIPPED</Option>
-          </Select>
+        <Select
+          placeholder="Trạng thái đơn hàng"
+          style={{ width: 180 }}
+          allowClear
+          onChange={(value) => setOrderStatus(value)}
+          value={orderStatus}
+          size="large"
+        >
+          <Option value="CANCELLED">Đã hủy</Option>
+          <Option value="COMPLETED">Hoàn thành</Option>
+          <Option value="CONFIRMED">Đã xác nhận</Option>
+          <Option value="PENDING">Đang xử lý</Option>
+          <Option value="SHIPPED">Đang giao hàng</Option>
+        </Select>
         
         </div>
         
@@ -495,35 +683,45 @@ const OrderManagement = () => {
             <Button key="close" onClick={() => setIsDetailModalVisible(false)}>
               Đóng
             </Button>,
-            <Button 
-              key="update" 
-              type="primary"
-              onClick={() => {
-                setIsDetailModalVisible(false);
-                handleStatusUpdateModal(currentOrder);
-              }}
-            >
-              Cập nhật trạng thái
-            </Button>,
-          ]}
+            // Only show the Update Status button if order is not cancelled or completed
+            currentOrder && currentOrder.status !== "CANCELLED" && currentOrder.status !== "COMPLETED" && (
+              <Button 
+                key="update" 
+                type="primary"
+                onClick={() => {
+                  setIsDetailModalVisible(false);
+                  handleStatusUpdateModal(currentOrder);
+                }}
+              >
+                Cập nhật trạng thái
+              </Button>
+            ),
+          ].filter(Boolean)} // Filter out null/false values
           width={800}
         >
           {currentOrder && (
             <>
               <Descriptions title="Thông tin đơn hàng" bordered>
-                <Descriptions.Item label="Trạng thái" span={3}>
-                  <Tag color={getStatusColor(currentOrder.status)}>
-                    {currentOrder.status}
-                  </Tag>
-                </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái" span={3}>
+                <Tag color={getStatusColor(currentOrder.status)}>
+                  {getStatusText(currentOrder.status)}
+                </Tag>
+              </Descriptions.Item>
                 
                 <Descriptions.Item label="Phương thức thanh toán" span={1}>
-                  {currentOrder.paymentMethod}
+                  {(() => {
+                    const methodMap = {
+                      "COD": "Thanh toán khi nhận hàng",
+                      "VNPAY": "VN Pay", 
+                      "IN_APP": "Thanh toán trong ứng dụng"
+                    };
+                    return methodMap[currentOrder.paymentMethod] || currentOrder.paymentMethod;
+                  })()}
                 </Descriptions.Item>
                 
                 <Descriptions.Item label="Trạng thái thanh toán" span={2}>
                   <Tag color={getPaymentStatusColor(currentOrder.paymentStatus)}>
-                    {currentOrder.paymentStatus}
+                    {getPaymentStatusText(currentOrder.paymentStatus)}
                   </Tag>
                 </Descriptions.Item>
                 
@@ -620,13 +818,18 @@ const OrderManagement = () => {
                       
                       {currentOrder.discount && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <span>Giảm giá:</span>
+                          <span>
+                            Giảm giá
+                            {currentOrder.discount.discountType === "PERCENT" 
+                              ? ` (${currentOrder.discount.discountValue}%)` 
+                              : ""}:
+                          </span>
                           <span style={{ fontWeight: 'bold', color: '#52c41a' }}>
                             -{new Intl.NumberFormat('vi-VN', { 
                               style: 'currency', 
                               currency: 'VND',
                               maximumFractionDigits: 0
-                            }).format(currentOrder.discount)}
+                            }).format(calculateDiscountAmount(currentOrder))}
                           </span>
                         </div>
                       )}
@@ -643,7 +846,7 @@ const OrderManagement = () => {
                           }).format(
                             currentOrder.orderItems.reduce((total, item) => 
                               total + (item.priceAtOrderTime * item.quantity), 0) - 
-                              (currentOrder.discount || 0)
+                              calculateDiscountAmount(currentOrder)
                           )}
                         </span>
                       </div>
@@ -715,20 +918,72 @@ const OrderManagement = () => {
             layout="vertical"
             initialValues={{ status: currentOrder?.status }}
           >
+            {/* Form item cho việc cập nhật trạng thái */}
             <Form.Item
               name="status"
               label="Trạng thái đơn hàng"
               rules={[{ required: true, message: "Vui lòng chọn trạng thái!" }]}
             >
               <Select>
-                <Option value="CANCELLED">CANCELLED</Option>
-                <Option value="COMPLETED">COMPLETED</Option>
-                <Option value="CONFIRMED">CONFIRMED</Option>
-                <Option value="PENDING">PENDING</Option>
-                <Option value="SHIPPED">SHIPPED</Option>
+                <Option value="CANCELLED">Đã hủy</Option>
+                <Option value="COMPLETED">Hoàn thành</Option>
+                <Option value="CONFIRMED">Đã xác nhận</Option>
+                <Option value="PENDING">Đang xử lý</Option>
+                <Option value="SHIPPED">Đang giao hàng</Option>
               </Select>
             </Form.Item>
           </Form>
+        </Modal>
+        
+        {/* Refund Confirmation Modal */}
+        <Modal
+          title="Xác nhận hoàn tiền"
+          open={isRefundModalVisible}
+          onCancel={() => setIsRefundModalVisible(false)}
+          footer={[
+            <Button key="cancel" onClick={() => setIsRefundModalVisible(false)}>
+              Hủy
+            </Button>,
+            <Button 
+              key="submit" 
+              type="primary" 
+              loading={loading}
+              onClick={handleAcceptRefund}
+            >
+              Xác nhận hoàn tiền
+            </Button>,
+          ]}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <ExclamationCircleFilled style={{ color: '#faad14', fontSize: '22px' }} />
+            <p style={{ margin: 0 }}>
+              Bạn đang xác nhận hoàn tiền cho đơn hàng <strong>#{orderToRefund?.id}</strong>
+            </p>
+          </div>
+          
+          <p>
+            Hành động này sẽ hoàn tiền cho khách hàng và không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục?
+          </p>
+          
+          {orderToRefund && (
+            <div style={{ background: '#f5f5f5', padding: '12px', borderRadius: '4px', marginTop: '16px' }}>
+              <p style={{ margin: '0 0 8px 0' }}><strong>Khách hàng:</strong> {orderToRefund.user?.fullName}</p>
+              <p style={{ margin: '0 0 8px 0' }}>
+                <strong>Số tiền hoàn:</strong> {' '}
+                <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+                  {new Intl.NumberFormat('vi-VN', { 
+                    style: 'currency', 
+                    currency: 'VND',
+                    maximumFractionDigits: 0
+                  }).format(
+                    orderToRefund.orderItems?.reduce((total, item) => 
+                      total + (item.priceAtOrderTime * item.quantity), 0) - 
+                      calculateDiscountAmount(orderToRefund)
+                  )}
+                </span>
+              </p>
+            </div>
+          )}
         </Modal>
       </div>
     </ConfigProvider>

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Table, Input, Button, Space, Modal, Form, Upload, message, Image, ConfigProvider, Select, Typography, Pagination } from 'antd';
 import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SortAscendingOutlined, SortDescendingOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { createCategory, deleteCategory, getAllCategoryPagination, updateCategory } from '../../../Redux/actions/CategoryThunk';
 import dayjs from 'dayjs';
+import { NotificationContext } from '../../../components/NotificationProvider';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -25,8 +26,10 @@ const CategoryManagement = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [fileList, setFileList] = useState([]);
   const [form] = Form.useForm();
-  const [messageApi, contextHolder] = message.useMessage();
+  const notification = useContext(NotificationContext);
+  
   const [loading, setLoading] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false); // Add this new state
   const dispatch = useDispatch();
 
   const fetchCategories = async () => {
@@ -45,11 +48,17 @@ const CategoryManagement = () => {
         setCategories(response.content);
         setTotalElements(response.totalElements);
       } else {
-        messageApi.warning("Không có danh mục nào");
+        notification.warning({
+          message: "Không có danh mục nào",
+          description: "Vui lòng kiểm tra lại tiêu chí tìm kiếm."
+        });
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
-      messageApi.error("Đã xảy ra lỗi khi tải danh mục");
+      notification.error({
+        message: "Đã xảy ra lỗi",
+        description: "Không thể tải danh mục."
+      });
     } finally {
       setLoading(false);
     }
@@ -123,6 +132,7 @@ const CategoryManagement = () => {
   };
   const handleSubmit = async () => {
     try {
+      setFormSubmitting(true); // Set loading state when form submission starts
       const values = await form.validateFields();
 
       const formData = new FormData();
@@ -137,30 +147,53 @@ const CategoryManagement = () => {
         const response = await dispatch(updateCategory(currentCategory.id, formData));
         console.log("Update response:", response);
         if (response === 200) {
-          messageApi.success('Cập nhật thể loại thành công');
+          notification.success({
+            message: 'Cập nhật thể loại thành công',
+            description: 'Thể loại đã được cập nhật thành công.'
+          });
           fetchCategories();
           setIsModalVisible(false);
         } else if(response === 409){
-          messageApi.error('Thể loại đã tồn tại');
+          notification.error({
+            message: 'Thể loại đã tồn tại',
+            description: 'Vui lòng kiểm tra lại thông tin và thử lại.'
+          });
         }else{
-          messageApi.error('Cập nhật thể loại thất bại');
+          notification.error({
+            message: 'Cập nhật thể loại thất bại',
+            description: 'Đã xảy ra lỗi khi cập nhật thể loại.'
+          });
         }
       } else {
         // Create new category
         const response = await dispatch(createCategory(formData));
         if (response === 201) {
-          messageApi.success('Thêm thể loại thành công');
+          notification.success({
+            message: 'Thêm thể loại thành công',
+            description: 'Thể loại đã được thêm thành công.'
+          });
           fetchCategories();
           setIsModalVisible(false);
         } else if(response === 409){
-          messageApi.error('Thể loại đã tồn tại');
+          notification.error({
+            message: 'Thể loại đã tồn tại',
+            description: 'Vui lòng kiểm tra lại thông tin và thử lại.'
+          });
         }else{
-          messageApi.error('Cập nhật thể loại thất bại');
+          notification.error({
+            message: 'Cập nhật thể loại thất bại',
+            description: 'Đã xảy ra lỗi khi cập nhật thể loại.'
+          });
         }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      messageApi.error('Đã xảy ra lỗi khi xử lý yêu cầu');
+      notification.error({
+        message: 'Đã xảy ra lỗi',
+        description: 'Không thể xử lý yêu cầu này.'
+      });
+    } finally {
+      setFormSubmitting(false); // Reset loading state when form submission completes
     }
   };
 
@@ -185,14 +218,23 @@ const CategoryManagement = () => {
       const response = await dispatch(deleteCategory(categoryToDelete.id));
 
       if (response === 204) {
-        messageApi.success('Xóa thể loại thành công');
+        notification.success({
+          message: 'Xóa thể loại thành công',
+          description: 'Thể loại đã được xóa thành công.'
+        });
         fetchCategories();
       } else {
-        messageApi.error('Xóa thể loại thất bại');
+        notification.error({
+          message: 'Xóa thể loại thất bại',
+          description: 'Không thể xóa thể loại này.'
+        });
       }
     } catch (error) {
       console.error("Error deleting category:", error);
-      messageApi.error('Đã xảy ra lỗi khi xóa');
+      notification.error({
+        message: 'Đã xảy ra lỗi',
+        description: 'Không thể xóa thể loại này.'
+      });
     } finally {
       setLoading(false);
       setIsDeleteModalVisible(false);
@@ -266,7 +308,10 @@ const CategoryManagement = () => {
     beforeUpload: (file) => {
       const isImage = file.type.startsWith('image/');
       if (!isImage) {
-        messageApi.error('Chỉ được upload file ảnh!');
+        notification.error({
+          message: 'Chỉ được upload file ảnh!',
+          description: 'Vui lòng chọn file ảnh để tải lên.',
+        });
         return Upload.LIST_IGNORE; // Không thêm vào danh sách nếu không phải ảnh
       }
       return false; // Không tự động upload
@@ -300,7 +345,6 @@ const CategoryManagement = () => {
       }}
     >
     <div style={{ padding: 24, background: '#fff'}}>
-      {contextHolder}
 
       {/* Title and Add Button */}
       <div style={{
@@ -428,7 +472,14 @@ const CategoryManagement = () => {
         width={700}
         okText={currentCategory ? "Cập nhật" : "Thêm mới"}
         cancelText="Hủy"
-        confirmLoading={loading}
+        confirmLoading={formSubmitting} // Use the new state here
+        okButtonProps={{ 
+          loading: formSubmitting, // Add loading prop to the OK button
+          disabled: formSubmitting // Also disable the button when loading
+        }}
+        cancelButtonProps={{
+          disabled: formSubmitting // Disable the cancel button during submission
+        }}
       >
         <Form form={form} layout="vertical">
           <Form.Item

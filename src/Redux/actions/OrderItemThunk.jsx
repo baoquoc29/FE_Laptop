@@ -144,3 +144,24 @@ export const revenueByMonth = (year) => async (dispatch) => {
         throw error;
     }
 };
+
+export const acceptRefund = (id) => async (dispatch) => {
+    try {
+        const response = await orderItemService.acceptRefund(id);
+
+        if (response) {
+            dispatch({
+                type: "ACCEPT_REFUND",
+                payload: response.code,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu order.");
+        }
+
+        return response.code;
+    } catch (error) {
+        console.error("❌ Lỗi khi gửi đơn hàng:");
+
+        throw error;
+    }
+}

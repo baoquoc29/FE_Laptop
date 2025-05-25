@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { 
   Steps, 
   Card, 
@@ -7,7 +7,6 @@ import {
   Button, 
   Select, 
   Upload, 
-  message, 
   Divider, 
   Tabs, 
   Collapse, 
@@ -33,6 +32,7 @@ import { useDispatch } from 'react-redux';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { useNavigate } from 'react-router-dom';
+import { NotificationContext } from '../../../components/NotificationProvider';
 
 const { Step } = Steps;
 const { TabPane } = Tabs;
@@ -47,7 +47,7 @@ const BasicInfoStep = ({ form, onNext, initialValues }) => {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
-  const [messageApi, contextHolder] = message.useMessage();
+  const notification = useContext(NotificationContext);
 
   useEffect(() => {
     fetchCategories();
@@ -86,11 +86,19 @@ const BasicInfoStep = ({ form, onNext, initialValues }) => {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
-      message.error('Bạn chỉ có thể tải lên tệp hình ảnh!');
+      notification.error({
+        message: 'Lỗi',
+        description: 'Bạn chỉ có thể tải lên tệp hình ảnh!',
+        placement: 'topRight',
+      });
     }
     const isLt10M = file.size / 1024 / 1024 < 10;
     if (!isLt10M) {
-      message.error('Hình ảnh phải nhỏ hơn 10MB!');
+      notification.error({
+        message: 'Lỗi',
+        description: 'Hình ảnh phải nhỏ hơn 10MB!',
+        placement: 'topRight',
+      });
     }
     return isImage && isLt10M;
   };
@@ -217,7 +225,7 @@ const OptionsStep = ({ form, onNext, onBack, initialValues }) => {
   const [options, setOptions] = useState([{}]);
   const [codeErrors, setCodeErrors] = useState(null);
   const [optionErrors, setOptionErrors] = useState({});
-  const [messageApi, contextHolder] = message.useMessage();
+  const notification = useContext(NotificationContext);
   
   // Cập nhật options từ initialValues
   useEffect(() => {
@@ -235,7 +243,11 @@ const OptionsStep = ({ form, onNext, onBack, initialValues }) => {
 
   const removeOption = (index) => {
     if (options.length <= 1) {
-      messageApi.warning('Cần có ít nhất một phiên bản');
+      notification.warning({
+        message: 'Cảnh báo',
+        description: 'Cần có ít nhất một phiên bản',
+        placement: 'topRight',
+      });
       return;
     }
     
@@ -298,7 +310,11 @@ const OptionsStep = ({ form, onNext, onBack, initialValues }) => {
       setOptionErrors(newErrors);
       
       // Chỉ hiển thị 1 thông báo lỗi qua messageApi
-      messageApi.error(`Mã phiên bản "${duplicateCodes[0]}" bị trùng lặp. Mỗi phiên bản phải có mã khác nhau.`);
+      notification.error({
+        message: 'Lỗi',
+        description: `Mã phiên bản "${duplicateCodes[0]}" bị trùng lặp. Mỗi phiên bản phải có mã khác nhau.`,
+        placement: 'topRight',
+      });
       
       // Xóa thông báo lỗi cũ ở đầu form
       setCodeErrors(null);
@@ -351,7 +367,11 @@ const OptionsStep = ({ form, onNext, onBack, initialValues }) => {
         }
         
         // Hiển thị thông báo lỗi
-        messageApi.error(errorMessage);
+        notification.error({
+          message: 'Lỗi',
+          description: errorMessage,
+          placement: 'topRight',
+        });
         
         // Chuyển tab đến option có lỗi
         setActiveTab(invalidOptionIndex + '');
@@ -382,7 +402,11 @@ const OptionsStep = ({ form, onNext, onBack, initialValues }) => {
           
           // Tạo thông báo lỗi từ lỗi đầu tiên
           const errorMessage = `Phiên bản ${parseInt(errorOptionIndex) + 1}: ${error.errorFields[0].errors[0]}`;
-          messageApi.error(errorMessage);
+          notification.error({
+            message: 'Lỗi',
+            description: errorMessage,
+            placement: 'topRight',
+          });
           
           // Cập nhật state lỗi
           const newErrors = { ...optionErrors };
@@ -395,7 +419,6 @@ const OptionsStep = ({ form, onNext, onBack, initialValues }) => {
 
   return (
     <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ options }}>
-      {contextHolder}
       <Card 
         title="Phiên bản sản phẩm" 
         bordered={false}
@@ -638,7 +661,7 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
   const [options, setOptions] = useState([]);
   const [variants, setVariants] = useState({});
   const [colorErrors, setColorErrors] = useState({});
-  const [messageApi, contextHolder] = message.useMessage();
+  const notification = useContext(NotificationContext);
 
   // Cập nhật options từ initialValues
   useEffect(() => {
@@ -706,7 +729,11 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
 
   const removeVariant = (optionIndex, variantIndex) => {
     if (!variants[optionIndex] || variants[optionIndex].length <= 1) {
-      messageApi.warning('Cần có ít nhất một màu sắc');
+      notification.warning({
+        message: 'Cảnh báo',
+        description: 'Cần có ít nhất một màu sắc',
+        placement: 'topRight',
+      });
       return;
     }
     const newVariants = { ...variants };
@@ -779,11 +806,19 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
-      messageApi.error('Chỉ được tải lên hình ảnh!');
+      notification.error({
+        message: 'Lỗi',
+        description: 'Chỉ được tải lên hình ảnh!',
+        placement: 'topRight',
+      });
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      messageApi.error('Hình ảnh phải nhỏ hơn 5MB!');
+      notification.error({
+        message: 'Lỗi',
+        description: 'Hình ảnh phải nhỏ hơn 5MB!',
+        placement: 'topRight',
+      });
     }
     return false; // Prevent auto upload
   };
@@ -800,7 +835,12 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
         !variants[optionIndex] || variants[optionIndex].length === 0
       );
 
-      messageApi.error(`Phiên bản "${options[missingOptionIndex]?.code || `#${missingOptionIndex}`}" chưa có màu sắc nào. Vui lòng thêm màu sắc cho tất cả phiên bản.`);
+      notification.error({
+        message: 'Lỗi',
+        description: `Phiên bản "${options[missingOptionIndex]?.code || `#${missingOptionIndex}`}" chưa có màu sắc nào. Vui lòng thêm màu sắc cho tất cả phiên bản.`,
+        placement: 'topRight',
+      });
+      
       // Chuyển tab đến option thiếu màu sắc
       setActiveTab(missingOptionIndex + '');
       return;
@@ -828,7 +868,11 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
           );
         });
 
-        messageApi.error(`Phiên bản "${options[invalidOptionIndex]?.code || `#${invalidOptionIndex + 1}`}" có màu sắc chưa đủ thông tin. Vui lòng kiểm tra lại.`);
+        notification.error({
+          message: 'Lỗi',
+          description: `Phiên bản "${options[invalidOptionIndex]?.code || `#${invalidOptionIndex + 1}`}" có màu sắc chưa đủ thông tin. Vui lòng kiểm tra lại.`,
+          placement: 'topRight',
+        });
         // Chuyển tab đến option có variant không hợp lệ
         setActiveTab(invalidOptionIndex + '');
         return;
@@ -856,7 +900,11 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
         if (errorField.length > 1 && errorField[0] === 'variants') {
           const errorOptionIndex = errorField[1];
           setActiveTab(errorOptionIndex + '');
-          messageApi.error(`Phiên bản ${parseInt(errorOptionIndex) + 1} có lỗi. Vui lòng kiểm tra lại.`);
+          notification.error({
+            message: 'Lỗi',
+            description: `Phiên bản ${parseInt(errorOptionIndex) + 1} có lỗi. Vui lòng kiểm tra lại.`,
+            placement: 'topRight',
+          });
         }
       }
     });
@@ -889,7 +937,6 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
   // Phần render của VariantsStep
   return (
     <Form form={form} layout="vertical">
-      {contextHolder}
       <Card title="Màu sắc sản phẩm" bordered={false}>
         {/* Hiển thị thông báo toàn cục nếu cần */}
         {Object.keys(colorErrors).length > 0 && (
@@ -1026,7 +1073,7 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
 const ReviewStep = ({ formData, onSubmit, onBack }) => {
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
-  const [messageApi, contextHolder] = message.useMessage();
+  const notification = useContext(NotificationContext);
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
@@ -1105,17 +1152,28 @@ const ReviewStep = ({ formData, onSubmit, onBack }) => {
       const response = await dispatch(adminCreateProduct(formDataObj));
       
       if (response === 201) {
-        messageApi.success('Thêm sản phẩm thành công!', 2, () => {
-          // Chuyển hướng sau khi hiển thị thông báo
-          navigate('/admin/laptops');
+        notification.success({
+          message: 'Thành công',
+          description: 'Thêm sản phẩm thành công!',
+          placement: 'topRight',
         });
         onSubmit();
+        navigate('/admin/laptops');
+
       } else {
-        messageApi.error('Thêm sản phẩm thất bại!');
+        notification.error({
+          message: 'Lỗi',
+          description: 'Thêm sản phẩm thất bại!',
+          placement: 'topRight',
+        });
       }
     } catch (error) {
       console.error('Lỗi khi thêm sản phẩm:', error);
-      messageApi.error('Đã xảy ra lỗi khi tạo sản phẩm. Vui lòng thử lại.');
+      notification.error({
+        message: 'Lỗi',
+        description: 'Đã xảy ra lỗi khi tạo sản phẩm. Vui lòng thử lại.',
+        placement: 'topRight',
+      });
     } finally {
       setLoading(false);
     }
@@ -1123,7 +1181,6 @@ const ReviewStep = ({ formData, onSubmit, onBack }) => {
 
   return (
     <div>
-      {contextHolder}
       <Card title="Xem lại thông tin sản phẩm" bordered={false}>
         <Descriptions title="Thông tin cơ bản" bordered column={2}>
           <Descriptions.Item label="Tên sản phẩm">{formData.basicInfo.name}</Descriptions.Item>
@@ -1277,7 +1334,7 @@ const ProductCreationWizard = () => {
     options: [],
     variants: {}
   });
-  const [messageApi, contextHolder] = message.useMessage();
+  const notification = useContext(NotificationContext);
 
   const [form1] = Form.useForm();
   const [form2] = Form.useForm();
@@ -1398,7 +1455,6 @@ const ProductCreationWizard = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      {contextHolder}
       <Steps current={currentStep} style={{ marginBottom: 32 }}>
         {steps.map((item) => (
           <Step key={item.title} title={item.title} icon={item.icon} />

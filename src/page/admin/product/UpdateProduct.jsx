@@ -116,24 +116,9 @@ const BasicInfoStep = ({ form, onNext, initialValues, existingImages, onDeleteIm
   };
 
   const handleRemove = (file) => {
-    // Nếu là hình ảnh hiện tại, xác nhận xóa
-    if (file.isExisting) {
-      confirm({
-        title: 'Bạn có chắc chắn muốn xóa hình ảnh này?',
-        icon: <ExclamationCircleOutlined />,
-        content: 'Hình ảnh sẽ bị xóa sau khi bạn lưu cập nhật.',
-        onOk() {
-          // Thêm ID hình ảnh vào danh sách xóa
-          if (file.id) {
-            onDeleteImage(file.id);
-          }
-          const newFileList = fileList.filter(f => f.uid !== file.uid);
-          setFileList(newFileList);
-        },
-      });
-      return false; // Ngăn chặn xóa tự động, chờ xác nhận
+    if (file.id) {
+      onDeleteImage(file.id);
     }
-
     // Nếu là hình ảnh mới, xóa trực tiếp
     const newFileList = fileList.filter(f => f.uid !== file.uid);
     setFileList(newFileList);
@@ -158,13 +143,14 @@ const BasicInfoStep = ({ form, onNext, initialValues, existingImages, onDeleteIm
 
   const handleSubmit = (values) => {
     // Phân loại file mới và file cũ
-    const newImages = fileList.filter(file => !file.isExisting);
-    const existingImageIds = fileList.filter(file => file.isExisting).map(file => file.id);
-    
+    const newImages = fileList.filter(file => !file.id);
+    const existingImageIds = fileList.filter(file => file.id).map(file => file.id);
+
     onNext({
       ...values,
-      images: newImages,
-      existingImageIds: existingImageIds
+      images: fileList,
+      existingImageIds: existingImageIds,
+      newImages: newImages,
     });
   };
 
@@ -1221,8 +1207,8 @@ const ReviewStep = ({ formData, onSubmit, onBack }) => {
       }
       
       // Add new product thumbnail images
-      if (formData.basicInfo.images && formData.basicInfo.images.length > 0) {
-        formData.basicInfo.images.forEach(image => {
+      if (formData.basicInfo.newImages && formData.basicInfo.newImages.length > 0) {
+        formData.basicInfo.newImages.forEach(image => {
           if (image.originFileObj) {
             formDataObj.append("imageThumbnails", image.originFileObj);
           }
@@ -1358,9 +1344,9 @@ const ReviewStep = ({ formData, onSubmit, onBack }) => {
             {formData.basicInfo.existingImageIds?.length || 0} ảnh
           </Descriptions.Item>
           <Descriptions.Item label="Hình ảnh mới">
-            {formData.basicInfo.images?.length || 0} ảnh
+            {formData.basicInfo.newImages?.length || 0} ảnh
           </Descriptions.Item>
-          
+
           <Descriptions.Item label="Hình ảnh bị xóa" span={2}>
             {Array.isArray(formData.imageDeleteIds) ? formData.imageDeleteIds.length : 0} ảnh
           </Descriptions.Item>
@@ -1575,7 +1561,7 @@ const UpdateProductWizard = () => {
           description: productData.description,
           categoryId: productData.category.id,
           brandId: productData.brand.id,
-          images: productData.images || []
+          images: productData.images || [],
         };
 
         // Đặt dữ liệu vào formData
