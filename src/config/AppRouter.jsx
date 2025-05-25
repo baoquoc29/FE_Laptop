@@ -25,6 +25,7 @@ import OrderManagement from '../page/admin/order/OrderManagement';
 import AdminProductDetail from '../page/admin/product/AdminProductDetail';
 import UpdateProduct from '../page/admin/product/UpdateProduct';
 import DashboardPage from "../page/admin/dashboard/Dashbarđ";
+import WithdrawalScreen from "../page/client/WithdrawalScreen";
 
 export function AppRouter() {
    return (
@@ -45,7 +46,7 @@ export function AppRouter() {
                 <Route path="/history/:id" element={<PurchaseHistory />} />
                 <Route path="/search/:text" element={<LaptopGrid />} />
                 <Route path="/search" element={<LaptopGrid />} />
-                <Route path="/test" element={<DialogflowMessenger />} />
+                <Route path="/wallet/:id" element={<WithdrawalScreen />} />
             </Routes>
             <Footer />
           </>
