@@ -9,7 +9,8 @@ import {
   Home,
   Users,
   Ticket,
-  ShoppingCart
+  ShoppingCart,
+  Wallet // Add Wallet icon for withdrawals
 } from 'lucide-react';
 import './sidebar.scss';
 import {MessageOutlined} from "@ant-design/icons";
@@ -61,6 +62,11 @@ const Sidebar = ({ isCollapsed }) => {
           path: '/admin/orders',
           name: 'Quản lý đơn hàng',
           icon: <ShoppingCart size={20} />
+        },
+        {
+          path: '/admin/withdrawals',
+          name: 'Quản lý rút tiền',
+          icon: <Wallet size={20} />
         },
         {
           path: '/admin/message',
