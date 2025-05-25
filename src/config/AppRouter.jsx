@@ -26,6 +26,7 @@ import AdminProductDetail from '../page/admin/product/AdminProductDetail';
 import UpdateProduct from '../page/admin/product/UpdateProduct';
 import DashboardPage from "../page/admin/dashboard/Dashbarđ";
 import WithdrawalScreen from "../page/client/WithdrawalScreen";
+import WithdrawalManagement from '../page/admin/withdrawal/WithdrawalManagement';
 import WithdrawalHistory from "../page/client/WithdrawalHistory";
 
 export function AppRouter() {
@@ -73,6 +74,7 @@ export function AppRouter() {
                 <Route path= "/message" element={<ChatManager />} />
                 <Route path= "/laptops/detail/:id" element={<AdminProductDetail />} />
                 <Route path="/orders" element={<OrderManagement />} />
+                <Route path="/withdrawals" element={<WithdrawalManagement />} />
               </Routes>
             </AdminLayout>
           </PrivateRoute>
