@@ -32,6 +32,9 @@ export class UserService extends baseService {
     blockUser = (userId) => {
         return this.put(`api/v1/users/block/${userId}`,{});
     }
+    sendRequestDrawl = (body) => {
+        return this.post('api/v1/withdrawals/create',body)
+    }
 
 }
 export const userService = new UserService ();

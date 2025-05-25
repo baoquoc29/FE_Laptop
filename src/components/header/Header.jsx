@@ -151,6 +151,13 @@ const Header = () => {
                 Lịch sử mua hàng
             </Menu.Item>
             <Menu.Item
+                key="wallet"
+                icon={<MoneyCollectOutlined size={16} />}
+                onClick={() => window.location.href = `/wallet/${userData.id}`}
+            >
+               Rút tiền từ ví TechWallets
+            </Menu.Item>
+            <Menu.Item
                 key="change-password"
                 icon={<Key size={16} />}
                 onClick={toggleChangePasswordModal}
