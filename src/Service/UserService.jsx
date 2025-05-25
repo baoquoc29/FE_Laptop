@@ -35,6 +35,16 @@ export class UserService extends baseService {
     sendRequestDrawl = (body) => {
         return this.post('api/v1/withdrawals/create',body)
     }
+    userGetAllWithdrawals = (startDate, endDate, page, size, sortBy, sortDirection) => {
+        const rawParams = { startDate, endDate, page, size, sortBy, sortDirection };
+        const filteredParams = Object.fromEntries(
+            Object.entries(rawParams).filter(([_, value]) => value !== null && value !== undefined)
+        );
+        const params = new URLSearchParams(filteredParams).toString();
+        return this.get(`api/v1/withdrawals/user/page?${params}`, true);
+    }
+
+
 
 }
 export const userService = new UserService ();

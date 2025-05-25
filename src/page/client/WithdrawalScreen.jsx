@@ -157,9 +157,9 @@ const WithdrawalScreen = () => {
             const body = {
                 accountNumber: destination,
                 amount: Number.parseInt(amount),
-                requestNote: `Rút tiền về ${destinationType === 'bank'
-                    ? `tài khoản ngân hàng ${BANKS.find(b => b.code === selectedBank)?.name}`
-                    : 'ví MoMo'}`,
+                requestNote: `${destinationType === 'bank'
+                    ? `${BANKS.find(b => b.code === selectedBank)?.name}`
+                    : 'MoMo'}`,
                 bankCode: destinationType === 'bank' ? selectedBank : null,
                 paymentMethod: destinationType === 'bank' ? 'BANK_TRANSFER' : 'MOMO'
             };

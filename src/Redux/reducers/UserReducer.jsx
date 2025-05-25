@@ -5,6 +5,7 @@ const initialState = {
     isAuthenticated: JSON.parse(localStorage.getItem(USER_LOGIN)),
     userData: JSON.parse(localStorage.getItem(USER_LOGIN)) || null,
     token: localStorage.getItem(TOKEN) || null,
+    drawlList : [],
 }
 
 export const UserReducer = (state = initialState, action) => {
@@ -23,6 +24,11 @@ export const UserReducer = (state = initialState, action) => {
                 userData: null,
                 token: null,
                 error: null
+            }
+        case "DRAWL_LIST":
+            return {
+                ...state,
+                drawlList: action.payload,
             }
         default:
             return {...state}

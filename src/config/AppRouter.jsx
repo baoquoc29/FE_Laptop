@@ -26,6 +26,7 @@ import AdminProductDetail from '../page/admin/product/AdminProductDetail';
 import UpdateProduct from '../page/admin/product/UpdateProduct';
 import DashboardPage from "../page/admin/dashboard/Dashbarđ";
 import WithdrawalScreen from "../page/client/WithdrawalScreen";
+import WithdrawalHistory from "../page/client/WithdrawalHistory";
 
 export function AppRouter() {
    return (
@@ -47,6 +48,7 @@ export function AppRouter() {
                 <Route path="/search/:text" element={<LaptopGrid />} />
                 <Route path="/search" element={<LaptopGrid />} />
                 <Route path="/wallet/:id" element={<WithdrawalScreen />} />
+                <Route path="/wallet-history/:id" element={<WithdrawalHistory />} />
             </Routes>
             <Footer />
           </>
