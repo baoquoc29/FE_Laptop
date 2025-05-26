@@ -1,10 +1,10 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import AdminLayout from "../layouts/AdminLayout";
 import Header from "../components/header/Header";
 import HomeScreen from "../page/client/HomeScreen";
 import CartPage from "../page/client/CartPage";
-import Footer from "../components/footer/Footer"; // Đảm bảo bạn có file Footer riêng
+import Footer from "../components/footer/Footer";
 import '../App.scss';
 import PurchaseHistory from "../page/client/PurchaseHistory";
 import OrderSuccess from "../page/client/OrderSuccess";
@@ -29,57 +29,48 @@ import WithdrawalScreen from "../page/client/WithdrawalScreen";
 import WithdrawalManagement from '../page/admin/withdrawal/WithdrawalManagement';
 import WithdrawalHistory from "../page/client/WithdrawalHistory";
 
+// Layout component cho user routes
+const UserLayout = ({ children }) => (
+  <>
+    <Header />
+    {children}
+    <Footer />
+  </>
+);
+
 export function AppRouter() {
    return (
     <Routes>
-      {/* User Routes with Header and Footer */}
-      <Route
-        path="/*"
-        element={
-          <>
-            <Header />
-            <Routes>
-                <Route path="/" element={<HomeScreen />} />
-                <Route path="/result" element={<OrderSuccess />} />
-                <Route path="/checkout" element={<CheckoutConfirmation />} />
-                <Route path="/cart/:id" element={<CartPage />} />
-                <Route path="/products/:id" element={<LaptopDetail />} />
-                <Route path="/voucher" element={<VoucherPage />} />
-                <Route path="/history/:id" element={<PurchaseHistory />} />
-                <Route path="/search/:text" element={<LaptopGrid />} />
-                <Route path="/search" element={<LaptopGrid />} />
-                <Route path="/wallet/:id" element={<WithdrawalScreen />} />
-                <Route path="/wallet-history/:id" element={<WithdrawalHistory />} />
-            </Routes>
-            <Footer />
-          </>
-        }
-      />
-      {/* Admin Routes with AdminLayout */}
-      <Route
-        path="/admin/*"
-        element={
-          <PrivateRoute >
-            <AdminLayout>
-              <Routes>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/brands" element={<BrandManagement />} />
-                <Route path="/categories" element={<CategoryManagement />} />
-                <Route path="/discounts" element={<DiscountManagement />} />
-                <Route path="/users" element={<UserManagement />} />
-                <Route path="/laptops" element={<ProductManagement />} />
-                <Route path="/laptops/create" element={<CreateProduct />} />
-                <Route path="/laptops/update/:id" element={<UpdateProduct />} />
-                <Route path= "/categories" element={<CategoryManagement />} />
-                <Route path= "/message" element={<ChatManager />} />
-                <Route path= "/laptops/detail/:id" element={<AdminProductDetail />} />
-                <Route path="/orders" element={<OrderManagement />} />
-                <Route path="/withdrawals" element={<WithdrawalManagement />} />
-              </Routes>
-            </AdminLayout>
-          </PrivateRoute>
-        }
-      />
+      {/* User Routes */}
+      <Route path="/" element={<UserLayout><HomeScreen /></UserLayout>} />
+      <Route path="/result" element={<UserLayout><OrderSuccess /></UserLayout>} />
+      <Route path="/checkout" element={<UserLayout><CheckoutConfirmation /></UserLayout>} />
+      <Route path="/cart/:id" element={<UserLayout><CartPage /></UserLayout>} />
+      <Route path="/products/:id" element={<UserLayout><LaptopDetail /></UserLayout>} />
+      <Route path="/voucher" element={<UserLayout><VoucherPage /></UserLayout>} />
+      <Route path="/history/:id" element={<UserLayout><PurchaseHistory /></UserLayout>} />
+      <Route path="/search/:text" element={<UserLayout><LaptopGrid /></UserLayout>} />
+      <Route path="/search" element={<UserLayout><LaptopGrid /></UserLayout>} />
+      <Route path="/wallet/:id" element={<UserLayout><WithdrawalScreen /></UserLayout>} />
+      <Route path="/wallet-history/:id" element={<UserLayout><WithdrawalHistory /></UserLayout>} />
+      
+      {/* Admin Routes */}
+      <Route path="/admin/dashboard" element={<PrivateRoute><AdminLayout><DashboardPage /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/brands" element={<PrivateRoute><AdminLayout><BrandManagement /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/categories" element={<PrivateRoute><AdminLayout><CategoryManagement /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/discounts" element={<PrivateRoute><AdminLayout><DiscountManagement /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/users" element={<PrivateRoute><AdminLayout><UserManagement /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/laptops" element={<PrivateRoute><AdminLayout><ProductManagement /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/laptops/create" element={<PrivateRoute><AdminLayout><CreateProduct /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/laptops/update/:id" element={<PrivateRoute><AdminLayout><UpdateProduct /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/message" element={<PrivateRoute><AdminLayout><ChatManager /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/laptops/detail/:id" element={<PrivateRoute><AdminLayout><AdminProductDetail /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/orders" element={<PrivateRoute><AdminLayout><OrderManagement /></AdminLayout></PrivateRoute>} />
+      <Route path="/admin/withdrawals" element={<PrivateRoute><AdminLayout><WithdrawalManagement /></AdminLayout></PrivateRoute>} />
+      
+      {/* Catch-all routes */}
+      <Route path="/admin/*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
