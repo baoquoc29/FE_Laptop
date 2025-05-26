@@ -27,12 +27,19 @@ import {
   SortDescendingOutlined,
   ExclamationCircleFilled,
   CalendarOutlined, // Thêm import icon Calendar
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  FilePdfOutlined // Thêm import icon PDF
 } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { getAllOrders, updateOrderStatus, acceptRefund } from "../../../Redux/actions/OrderItemThunk";
 import dayjs from 'dayjs';
 import { NotificationContext } from '../../../components/NotificationProvider';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// Import font files
+import timesNewRomanNormal from '../../../assets/fonts/times.ttf';
+import timesNewRomanBold from '../../../assets/fonts/times-bold.ttf';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -443,6 +450,17 @@ const OrderManagement = () => {
               title="Chấp nhận hoàn tiền"
             />
           )}
+          {/* Thêm nút xuất hoá đơn nếu đơn hàng đã hoàn thành */}
+          {record.status === "COMPLETED" && (
+            <Button 
+              type="primary"
+              style={{ background: '#722ed1', borderRadius: '4px' }}
+              icon={<FilePdfOutlined />}
+              onClick={() => exportInvoiceToPdf(record)}
+              size="middle"
+              title="Xuất hoá đơn"
+            />
+          )}
         </Space>
       ),
     },
@@ -506,6 +524,265 @@ const OrderManagement = () => {
       setIsRefundModalVisible(false);
       setOrderToRefund(null);
     }
+  };
+
+  // Thêm hàm xuất hóa đơn PDF
+  const exportInvoiceToPdf = (order) => {
+    // Khởi tạo một tài liệu PDF với kích thước A4
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    
+    // Đăng ký font Times New Roman
+    doc.addFont(timesNewRomanNormal, "TimesNewRoman", "normal");
+    doc.addFont(timesNewRomanBold, "TimesNewRoman", "bold");
+    
+    // Tiêu đề hoá đơn
+    doc.setFontSize(20);
+    doc.setFont('TimesNewRoman', 'bold');
+    doc.text('HÓA ĐƠN BÁN HÀNG', 105, 20, { align: 'center' });
+    
+    // Thông tin cửa hàng
+    doc.setFontSize(12);
+    doc.setFont('TimesNewRoman', 'normal');
+    doc.text('TECH LAPTOP', 105, 30, { align: 'center' });
+    doc.text('Địa chỉ: 123 Đường ABC, Quận XYZ, TP. HN', 105, 35, { align: 'center' });
+    doc.text('Điện thoại: 0123456789 - Email: contact@techstore.com', 105, 40, { align: 'center' });
+    
+    // Thông tin hoá đơn
+    doc.setFontSize(11);
+    doc.line(15, 45, 195, 45); // Căn chỉnh đường kẻ với lề đối xứng
+    doc.text(`Mã đơn hàng: #${order.id}`, 15, 55);
+    doc.text(`Ngày tạo: ${dayjs(order.createdAt).format('DD/MM/YYYY HH:mm')}`, 15, 60);
+    doc.text(`Trạng thái: ${getStatusText(order.status)}`, 15, 65);
+    doc.text(`Phương thức thanh toán: ${
+      order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' :
+      order.paymentMethod === 'VNPAY' ? 'VN Pay' :
+      order.paymentMethod === 'IN_APP' ? 'Thanh toán trong ứng dụng' :
+      order.paymentMethod
+    }`, 15, 70);
+    
+    // THÔNG TIN NGƯỜI MUA
+    doc.setFontSize(12);
+    doc.setFont('TimesNewRoman', 'bold');
+    doc.text('THÔNG TIN NGƯỜI MUA', 15, 80);
+    doc.setFont('TimesNewRoman', 'normal');
+    doc.setFontSize(11);
+    doc.text(`Họ tên: ${order.user?.fullName || 'N/A'}`, 15, 85);
+    doc.text(`Email: ${order.user?.email || 'N/A'}`, 15, 90);
+    doc.text(`Điện thoại: ${order.user?.phoneNumber || 'N/A'}`, 15, 95);
+    
+    // THÔNG TIN NGƯỜI NHẬN - Xuống dưới người mua
+    let currentY = 105;
+    doc.setFontSize(12);
+    doc.setFont('TimesNewRoman', 'bold');
+    doc.text('THÔNG TIN NGƯỜI NHẬN', 15, currentY);
+    doc.setFont('TimesNewRoman', 'normal');
+    doc.setFontSize(11);
+    
+    currentY += 5;
+    doc.text(`Họ tên: ${order.infoUserReceive?.fullName || 'N/A'}`, 15, currentY);
+    currentY += 5;
+    doc.text(`Email: ${order.infoUserReceive?.email || 'N/A'}`, 15, currentY);
+    currentY += 5;
+    doc.text(`Điện thoại: ${order.infoUserReceive?.phoneNumber || 'N/A'}`, 15, currentY);
+    
+    // Xử lý địa chỉ dài - chia thành nhiều dòng nếu cần
+    const address = formatAddress(order.infoUserReceive);
+    const maxWidth = 175; // Điều chỉnh để phù hợp với lề mới
+    const addressLines = doc.splitTextToSize(address, maxWidth);
+    
+    currentY += 5;
+    doc.text(`Địa chỉ:`, 15, currentY);
+    addressLines.forEach((line, index) => {
+      doc.text(line, 30, currentY + (index * 5));
+    });
+    
+    // Điều chỉnh vị trí bắt đầu cho bảng
+    const tableStartY = currentY + (addressLines.length * 5) + 10;
+    
+    // Danh sách sản phẩm
+    doc.setFontSize(12);
+    doc.setFont('TimesNewRoman', 'bold');
+    doc.text('CHI TIẾT SẢN PHẨM', 15, tableStartY);
+    
+    // Tạo bảng chi tiết sản phẩm
+    const tableColumn = [
+      "STT", 
+      "Tên sản phẩm", 
+      "Mã SP", 
+      "Màu sắc", 
+      "Đơn giá", 
+      "SL", 
+      "Thành tiền"
+    ];
+    
+    // Dữ liệu cho bảng
+    const tableRows = [];
+    
+    order.orderItems.forEach((item, index) => {
+      const priceFormatted = new Intl.NumberFormat('vi-VN', { 
+        style: 'decimal', 
+        maximumFractionDigits: 0
+      }).format(item.priceAtOrderTime);
+      
+      const totalFormatted = new Intl.NumberFormat('vi-VN', { 
+        style: 'decimal', 
+        maximumFractionDigits: 0
+      }).format(item.priceAtOrderTime * item.quantity);
+      
+      tableRows.push([
+        index + 1,
+        item.productName,
+        item.productCode,
+        item.productColor,
+        priceFormatted,
+        item.quantity,
+        totalFormatted
+      ]);
+    });
+    
+    // Tạo bảng với jspdf-autotable - căn giữa hoàn toàn
+    autoTable(doc, {
+      startY: tableStartY + 5,
+      head: [tableColumn],
+      body: tableRows,
+      headStyles: { 
+        fillColor: [25, 118, 210], 
+        textColor: 255,
+        fontStyle: 'bold',
+        font: 'TimesNewRoman',
+        halign: 'center'
+      },
+      theme: 'grid',
+      styles: {
+        overflow: 'linebreak',
+        cellPadding: 3,
+        fontSize: 10,
+        font: 'TimesNewRoman',
+        lineWidth: 0.1,
+        lineColor: [80, 80, 80]
+      },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },    // STT
+        1: { cellWidth: 45 },                      // Tên sản phẩm
+        2: { cellWidth: 25, halign: 'center' },    // Mã SP
+        3: { cellWidth: 25, halign: 'center' },    // Màu sắc
+        4: { cellWidth: 30, halign: 'right' },     // Đơn giá
+        5: { cellWidth: 15, halign: 'center' },    // SL
+        6: { cellWidth: 30, halign: 'right' }      // Thành tiền
+      },
+      margin: { left: 15, right: 15 },             // Lề đối xứng
+      tableWidth: 'auto'
+    });
+    
+    // Tính tổng tiền
+    const finalY = (doc.lastAutoTable?.finalY || tableStartY + 5) + 15;
+    
+    // Tổng tiền sản phẩm
+    const subtotal = order.orderItems.reduce(
+      (total, item) => total + (item.priceAtOrderTime * item.quantity), 0
+    );
+    
+    // Tính giảm giá
+    const discountAmount = order.discount ? calculateDiscountAmount(order) : 0;
+    
+    // Tổng thanh toán
+    const total = subtotal - discountAmount;
+    
+    // Thiết kế lại phần tổng thanh toán - căn giữa và đẹp hơn
+    doc.setFontSize(11);
+    doc.setFont('TimesNewRoman', 'normal');
+
+    // Tính toán vị trí căn giữa cho phần tổng thanh toán
+    const summaryBoxWidth = 85;           // Tăng chiều rộng từ 80 lên 85
+    const summaryBoxX = (210 - summaryBoxWidth) / 2;  // Căn giữa theo trang A4 (210mm)
+    const summaryBoxHeight = order.discount ? 45 : 30; // Tăng chiều cao để đủ chỗ cho text
+    
+    // Vẽ khung tổng kết với thiết kế đẹp hơn
+    doc.setFillColor(248, 249, 250);  // Màu nền xám nhạt
+    doc.roundedRect(summaryBoxX, finalY - 5, summaryBoxWidth, summaryBoxHeight, 2, 2, 'F');
+    
+    // Vẽ viền
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(summaryBoxX, finalY - 5, summaryBoxWidth, summaryBoxHeight, 2, 2, 'D');
+    
+    // Vị trí cho label và value bên trong box
+    const labelX = summaryBoxX + 5;
+    const valueX = summaryBoxX + summaryBoxWidth - 5;
+    
+    let summaryY = finalY + 3; // Tăng từ +2 lên +3 để có thêm khoảng cách
+    
+    // Hiển thị tổng tiền sản phẩm
+    doc.setFont('TimesNewRoman', 'normal');
+    doc.setFontSize(10); // Giảm font size từ 11 xuống 10
+    doc.text('Tổng tiền sản phẩm:', labelX, summaryY);
+    doc.text(`${new Intl.NumberFormat('vi-VN', { 
+      style: 'decimal', 
+      maximumFractionDigits: 0
+    }).format(subtotal)} VNĐ`, valueX, summaryY, { align: 'right' });
+
+    // Hiển thị giảm giá nếu có
+    if (order.discount) {
+      summaryY += 8; // Tăng khoảng cách từ 7 lên 8
+      
+      // Hiển thị loại giảm giá
+      let discountLabel = 'Giảm giá:';
+      if (order.discount.discountType === "PERCENT") {
+        discountLabel = `Giảm giá (${order.discount.discountValue}%):`;
+      }
+      
+      doc.text(discountLabel, labelX, summaryY);
+      doc.text(`-${new Intl.NumberFormat('vi-VN', { 
+        style: 'decimal', 
+        maximumFractionDigits: 0
+      }).format(discountAmount)} VNĐ`, valueX, summaryY, { align: 'right' });
+    }
+
+    // Vẽ đường kẻ ngang phân cách bên trong box
+    summaryY += 6; // Tăng từ 4 lên 6
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(150, 150, 150);
+    doc.line(labelX, summaryY, valueX, summaryY);
+
+    // Tổng thanh toán - làm nổi bật
+    summaryY += 8; // Tăng từ 6 lên 8 để tránh đè lên đường kẻ
+    doc.setFont('TimesNewRoman', 'bold');
+    doc.setFontSize(11); // Giữ nguyên font size cho phần quan trọng
+    doc.text('TỔNG THANH TOÁN:', labelX, summaryY);
+    doc.setTextColor(220, 53, 69); // Màu đỏ cho số tiền
+    doc.text(`${new Intl.NumberFormat('vi-VN', { 
+      style: 'decimal', 
+      maximumFractionDigits: 0
+    }).format(total)} VNĐ`, valueX, summaryY, { align: 'right' });
+    
+    // Reset màu chữ về đen
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+
+    // Chữ ký - đặt cách khoảng từ phần tổng thanh toán
+    summaryY += 30; // Tăng từ 25 lên 30 để có khoảng cách rõ ràng hơn
+    doc.setFont('TimesNewRoman', 'normal');
+    doc.text('Ngày xuất hoá đơn: ' + dayjs().format('DD/MM/YYYY'), 15, summaryY);
+
+    summaryY += 15;
+    
+    // Căn chỉnh chữ ký đối xứng
+    const signatureY = summaryY;
+    const leftSignatureX = 52;   // Vị trí chữ ký bên trái
+    const rightSignatureX = 158; // Vị trí chữ ký bên phải
+    
+    doc.text('Người bán hàng', leftSignatureX, signatureY, { align: 'center' });
+    doc.text('(Ký, ghi rõ họ tên)', leftSignatureX, signatureY + 5, { align: 'center' });
+
+    doc.text('Người mua hàng', rightSignatureX, signatureY, { align: 'center' });
+    doc.text('(Ký, ghi rõ họ tên)', rightSignatureX, signatureY + 5, { align: 'center' });
+
+    // Lưu file PDF
+    doc.save(`Hoa_don_${order.id}_${dayjs().format('DDMMYYYY')}.pdf`);
   };
 
   return (
@@ -683,6 +960,17 @@ const OrderManagement = () => {
             <Button key="close" onClick={() => setIsDetailModalVisible(false)}>
               Đóng
             </Button>,
+            // Thêm nút xuất hoá đơn nếu đơn hàng đã hoàn thành
+            currentOrder && currentOrder.status === "COMPLETED" && (
+              <Button 
+                key="export" 
+                type="primary"
+                icon={<FilePdfOutlined />}
+                onClick={() => exportInvoiceToPdf(currentOrder)}
+              >
+                Xuất hoá đơn
+              </Button>
+            ),
             // Only show the Update Status button if order is not cancelled or completed
             currentOrder && currentOrder.status !== "CANCELLED" && currentOrder.status !== "COMPLETED" && (
               <Button 
