@@ -301,25 +301,41 @@ const CartPage = () => {
     };
 
     const handleQuantityChange = async (productId, newQuantity) => {
-        if (newQuantity < 1) return;
+        if (newQuantity < 1) {
+            notification.error({
+                message: 'Lỗi',
+                description: 'Số lượng không thể nhỏ hơn 1',
+                placement: 'topRight',
+            });
+            return;
+        }
 
         try {
             setUpdatingQuantities(prev => ({ ...prev, [productId]: true }));
-            await dispatch(updateCartItemQuantity({
+
+            const result = await dispatch(updateCartItemQuantity({
                 id: productId,
                 quantity: newQuantity
             }));
+
+            if (result !== 200) {
+                throw new Error('Số lượng mặt hàng này không đủ ');
+            }
 
             setCartItems(prev => prev.map(item =>
                 item.id === productId ? { ...item, quantity: newQuantity } : item
             ));
         } catch (error) {
+            console.error('Update quantity error:', error);
             notification.error({
                 message: 'Lỗi',
-                description: 'Không thể cập nhật số lượng',
+                description: 'Số lượng mặt hàng này không đủ',
                 placement: 'topRight',
             });
+
+            // Có thể thêm logic khôi phục số lượng cũ nếu cần
         } finally {
+            // Tắt trạng thái loading
             setUpdatingQuantities(prev => ({ ...prev, [productId]: false }));
         }
     };

@@ -44,7 +44,7 @@ const ChatAdmin = () => {
         const client = Stomp.over(socket);
 
         client.connect({}, () => {
-            client.subscribe("/topic/support", (message) => {
+            client.subscribe(`/user/1/queue/messages`, (message) => {
                 const chatMessage = JSON.parse(message.body);
                 console.log(message.body);
 

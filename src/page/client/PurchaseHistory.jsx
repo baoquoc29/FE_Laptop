@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, Search, ShoppingBag, Package, Truck } from "luc
 import { useNavigate } from 'react-router-dom';
 import { Pagination, Spin, Input, Select } from "antd";
 import { useDispatch, useSelector } from 'react-redux';
-import {getAllHistoryOrder, refundOrder} from "../../Redux/actions/OrderItemThunk";
+import {cancelOrder, getAllHistoryOrder, refundOrder} from "../../Redux/actions/OrderItemThunk";
 import "../style/PurchaseHistory.css";
 import {NotificationContext} from "../../components/NotificationProvider";
 
@@ -110,6 +110,20 @@ const PurchaseHistory = () => {
     const handleReturnRequest =  async  (id) => {
         const idNumber = id.substring(4);
         const res = await dispatch(refundOrder(idNumber));
+        if(res.code === 200){
+            window.location.reload();
+        }
+        else{
+            notification.warning({
+                message: 'Cảnh báo',
+                description: 'Đã xảy ra lỗi!',
+                placement: 'topRight',
+            });
+        }
+    }
+    const handleCancelRequest =  async  (id) => {
+        const idNumber = id.substring(4);
+        const res = await dispatch(cancelOrder(idNumber));
         if(res.code === 200){
             window.location.reload();
         }
@@ -292,26 +306,61 @@ const PurchaseHistory = () => {
                                         <div className="order-actions">
                                             <div className="status-info">
                                                 {order.status === "PENDING" && (
-                                                    <div className="status-message pending">
-                                                        <Package size={20} />
-                                                        <span>Đang chờ xác nhận</span>
+                                                    <div
+                                                        className="status-message pending"
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: "8px",
+                                                            padding: "8px 12px",
+                                                            borderRadius: "4px",
+                                                            backgroundColor: "#fff8e1"
+                                                        }}
+                                                    >
+                                                        <Package size={20} style={{ color: "#ffb300" }} />
+                                                        <span style={{ fontWeight: 500 }}>Đang chờ xác nhận</span>
+                                                        <button
+                                                            style={{
+                                                                marginLeft: "16px",
+                                                                padding: "6px 12px",
+                                                                borderRadius: "4px",
+                                                                border: "1px solid #e0e0e0",
+                                                                backgroundColor: "transparent",
+                                                                cursor: "pointer",
+                                                                transition: "all 0.3s ease",
+                                                                fontWeight: 500
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"}
+                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                                                            onClick={() => {
+                                                                notification.success({
+                                                                    message: 'Yêu cầu đã gửi thành công',
+                                                                    description: 'Yêu cầu huỷ đơn hàng thành công',
+                                                                    duration: 4.5,
+                                                                    placement: 'topRight',
+                                                                });
+                                                                handleCancelRequest(order.id);
+                                                            }}
+                                                        >
+                                                            Huỷ đơn hàng
+                                                        </button>
                                                     </div>
                                                 )}
                                                 {order.status === "CONFIRMED" && (
                                                     <div className="status-message confirmed">
-                                                        <Package size={20} />
+                                                        <Package size={20}/>
                                                         <span>Đã xác nhận - Đang chuẩn bị hàng</span>
                                                     </div>
                                                 )}
                                                 {order.status === "SHIPPED" && (
                                                     <div className="status-message shipped">
-                                                        <Truck size={20} />
+                                                        <Truck size={20}/>
                                                         <span>Đang vận chuyển</span>
                                                     </div>
                                                 )}
                                                 {order.status === "COMPLETED" && (
                                                     <div className="status-message completed">
-                                                        <Package size={20} />
+                                                    <Package size={20} />
                                                         <span>Đã giao hàng thành công</span>
                                                     </div>
                                                 )}
@@ -333,7 +382,7 @@ const PurchaseHistory = () => {
                                                         <i className="icon-check"></i> Đã hoàn tiền
                                                     </div>
                                                 )}
-                                                {order.status === "PENDING" && order.paymentStatus === "PAID" && (
+                                                {order.paymentStatus === "PAID" && (
                                                     <button
                                                         className="secondary-button"
                                                         onClick={() => {

@@ -17,7 +17,7 @@ export class CartItemService extends baseService {
             id: id,
             quantity: quantity,
         }).toString();
-        return  this.post('api/v1/cart/update',params)
+        return  this.post('api/v1/cart/update?' +params,{});
     }
     deleteCartItems  = (listId) => {
         const params = new URLSearchParams({

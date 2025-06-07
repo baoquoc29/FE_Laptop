@@ -29,6 +29,9 @@ export class OrderItemService extends baseService {
     refund = (id) => {
         return this.put(`api/v1/order/refund/${id}`,{});
     }
+    cancel = (id) => {
+        return this.put(`api/v1/order/cancel/${id}`,{});
+    }
 
     adminGetAllOrders = ( startDate,endDate, orderStatus, paymentMethod, paymentStatus, page, size, sortBy, sortDir ) => {
         const rawParams = { startDate,endDate, orderStatus, paymentMethod, paymentStatus, page, size, sortBy, sortDir };
