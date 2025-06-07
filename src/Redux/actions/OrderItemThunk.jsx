@@ -81,7 +81,27 @@ export const refundOrder = (orderId) => async (dispatch) => {
         throw error;
     }
 };
+export const cancelOrder = (orderId) => async (dispatch) => {
+    try {
 
+        const response = await orderItemService.cancel(orderId);
+
+        if (response) {
+            dispatch({
+                type: "CANCEL_ORDER",
+                payload: response,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu order.");
+        }
+
+        return response;
+    } catch (error) {
+        console.error("❌ Lỗi khi gửi đơn hàng:");
+
+        throw error;
+    }
+};
 export const getAllOrders = ( startDate, endDate, orderStatus, paymentMethod, paymentStatus, page, size, sortBy, sortDir) => async (dispatch) => {
     try {
         const response = await orderItemService.adminGetAllOrders(startDate, endDate, orderStatus, paymentMethod, paymentStatus, page, size, sortBy, sortDir);
