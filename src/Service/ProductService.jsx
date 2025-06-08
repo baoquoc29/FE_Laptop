@@ -23,6 +23,10 @@ export class ProductService extends baseService {
 
         return this.get(`api/v1/products/page?${query}`, false);
     }
+
+    getAllProductFeature = (userId) => {
+        return this.get(`api/v1/products/feature?userId=${userId}`, false);
+    }
     searchDetailProducts = (params) => {
         const {
             keyword,
