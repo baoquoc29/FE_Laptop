@@ -51,7 +51,34 @@ export const searchProducts = (params) => async (dispatch) => {
         });
     }
 };
+export const getAllProductFeature = (userId) => async (dispatch) => {
+    try {
+        const res = await productService.getAllProductFeature(userId);
+        console.log("Search products response:", res);
 
+        if (res && res.data) {
+            dispatch({
+                type: "PRODUCT_FEATURE",
+                payload: res.data
+            });
+        } else {
+            console.log("No product data found.");
+        }
+
+        return res.data;
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error("API Error:", error.response.data.message);
+        } else {
+            console.error("Unexpected error:", error.message);
+        }
+
+        dispatch({
+            type: "PRODUCT_FEATURE_FAILURE",
+            payload: error.message
+        });
+    }
+};
 export const searchProductsDetail = (params) => async (dispatch) => {
     try {
         dispatch({ type: "PRODUCT_SEARCH_REQUEST" });
