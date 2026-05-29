@@ -517,7 +517,7 @@ const CheckoutConfirmation = () => {
                                             <option value="">Chọn tỉnh/thành phố</option>
                                             {provinces?.map(province => {
                                                 const id = province.ProvinceID;
-                                                const name = province.ProvinceName;
+                                                const name = province.ProvinceName || '';
                                                 return (
                                                     <option key={id} value={id}>
                                                         {name.trim()}
@@ -543,7 +543,7 @@ const CheckoutConfirmation = () => {
                                             <option value="">Chọn quận/huyện</option>
                                             {districts?.map(district => {
                                                 const id = district.DistrictID;
-                                                const name = district.DistrictName;
+                                                const name = district.DistrictName || '';
                                                 return (
                                                     <option key={id} value={id}>
                                                         {name.trim()}
@@ -569,7 +569,7 @@ const CheckoutConfirmation = () => {
                                             <option value="">Chọn phường/xã</option>
                                             {wards?.map(ward => {
                                                 const code = ward.WardCode;
-                                                const name = ward.WardName;
+                                                const name = ward.WardName || '';
                                                 return (
                                                     <option key={code} value={code}>
                                                         {name.trim()}
