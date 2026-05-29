@@ -12,6 +12,7 @@ import {getUserBalance} from "../../Redux/actions/UserThunk";
 import {NotificationContext} from "../../components/NotificationProvider";
 import { shippingService } from "../../Service/ShippingService";
 import { SHOP_DISTRICT_ID } from "../../Utils/Setting/Config";
+import { money } from "../../Utils/orderHelpers";
 
 const { Panel } = Collapse;
 
@@ -774,13 +775,13 @@ const OrderItem = ({ item }) => (
         <div className="item-details">
             <h4>{item.productName + " " + item.productCode}</h4>
             <div className="item-meta">
-                <span>SL: {item.quantity} Đơn giá: {item.basePrice.toLocaleString("vi-VN")}₫</span>
+                <span>SL: {item.quantity} Đơn giá: {money(item.basePrice)}</span>
             </div>
             {item.color && <div className="item-attribute">{item.color}</div>}
             {item.size && <div className="item-attribute">Size: {item.size}</div>}
         </div>
         <div className="item-price">
-            {(item.basePrice * item.quantity).toLocaleString("vi-VN")}₫
+            {money(item.basePrice * item.quantity)}
         </div>
     </div>
 );
@@ -801,7 +802,7 @@ const OrderSummary = ({
         <div className="summary-section">
             <div className="summary-row">
                 <span className="summary-label">Tạm tính</span>
-                <span className="summary-value">{subtotal.toLocaleString("vi-VN")}₫</span>
+                <span className="summary-value">{money(subtotal)}</span>
             </div>
 
             {discount > 0 && (
@@ -815,7 +816,7 @@ const OrderSummary = ({
                         )}
                     </span>
                     <span className="summary-value discount-value">
-                        -{discount.toLocaleString("vi-VN")}₫
+                        -{money(discount)}
                     </span>
                 </div>
             )}
@@ -832,7 +833,7 @@ const OrderSummary = ({
                         ) : shipping === 0 ? (
                             <span style={{ color: '#52c41a', fontWeight: '600' }}>Miễn phí</span>
                         ) : (
-                            <span style={{ color: '#fd5f27', fontWeight: '700' }}>{shipping.toLocaleString("vi-VN")}₫</span>
+                            <span style={{ color: '#fd5f27', fontWeight: '700' }}>{money(shipping)}</span>
                         )}
                     </span>
                 </div>
@@ -880,25 +881,25 @@ const OrderSummary = ({
                             </div>
                             <div className="ghn-detail-row">
                                 <span className="ghn-detail-label">Bảo hiểm hàng hóa:</span>
-                                <span className="ghn-detail-value">{(subtotal).toLocaleString("vi-VN")}₫</span>
+                                <span className="ghn-detail-value">{money(subtotal)}</span>
                             </div>
                             {shippingFeeDetails.serviceFee > 0 && (
                                 <div className="ghn-detail-row">
                                     <span className="ghn-detail-label">Phí dịch vụ:</span>
-                                    <span className="ghn-detail-value">{(shippingFeeDetails.serviceFee).toLocaleString("vi-VN")}₫</span>
+                                    <span className="ghn-detail-value">{money(shippingFeeDetails.serviceFee)}</span>
                                 </div>
                             )}
                             {shippingFeeDetails.insuranceFee > 0 && (
                                 <div className="ghn-detail-row">
                                     <span className="ghn-detail-label">Phí bảo hiểm:</span>
-                                    <span className="ghn-detail-value">{(shippingFeeDetails.insuranceFee).toLocaleString("vi-VN")}₫</span>
+                                    <span className="ghn-detail-value">{money(shippingFeeDetails.insuranceFee)}</span>
                                 </div>
                             )}
                         </div>
                         
                         <div className="ghn-total-row">
                             <span className="ghn-total-label">Tổng phí vận chuyển:</span>
-                            <span className="ghn-total-value">{(shippingFeeDetails.total).toLocaleString("vi-VN")}₫</span>
+                            <span className="ghn-total-value">{money(shippingFeeDetails.total)}</span>
                         </div>
                     </div>
                 ) : (
@@ -912,7 +913,7 @@ const OrderSummary = ({
 
             <div className="summary-row total-row">
                 <span className="total-label">Tổng thanh toán</span>
-                <span className="total-value">{total.toLocaleString("vi-VN")}₫</span>
+                <span className="total-value">{money(total)}</span>
             </div>
 
             {voucher && (

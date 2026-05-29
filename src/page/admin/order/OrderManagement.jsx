@@ -453,26 +453,6 @@ const OrderManagement = () => {
     },
   ];
 
-  // Thêm hàm tính giá trị giảm giá
-  const calculateDiscountAmount = (order) => {
-    if (!order.discount) return 0;
-
-    const { discount } = order;
-    const subtotal = order.orderItems.reduce(
-      (total, item) => total + item.priceAtOrderTime * item.quantity,
-      0
-    );
-
-    if (discount.discountType === "PERCENT") {
-      // Giảm giá theo phần trăm
-      return (subtotal * discount.discountValue) / 100;
-    } else if (discount.discountType === "FIXED") {
-      // Giảm giá cố định
-      return discount.discountValue;
-    }
-    
-    return 0;
-  };
 
   // Add this new function to handle refund modal
   const showRefundModal = (order) => {
