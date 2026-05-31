@@ -32,7 +32,7 @@ const CheckoutConfirmation = () => {
         address: '',
         postalCode: '',
         notes: '',
-        paymentMethod: 'VNPAY'
+        paymentMethod: 'COD'
     });
     const [errors, setErrors] = useState({});
 
@@ -394,13 +394,7 @@ const CheckoutConfirmation = () => {
                     window.location.href = '/result';
                     break;
 
-                case 'VNPAY':
-                    const paymentRes = await dispatch(createUrlPay(total, res.data.orderId));
-                    if (!paymentRes?.payload?.url) {
-                        throw new Error('Failed to create payment URL');
-                    }
-                    window.location.href = paymentRes.payload.url;
-                    break;
+
 
                 default:
                     throw new Error('Phương thức thanh toán không hợp lệ');
@@ -630,19 +624,7 @@ const CheckoutConfirmation = () => {
                             key="payment"
                         >
                             <div className="payment-methods">
-                                <div className="payment-option">
-                                    <input
-                                        type="radio"
-                                        id="vnpay"
-                                        name="paymentMethod"
-                                        value="VNPAY"
-                                        checked={formData.paymentMethod === 'VNPAY'}
-                                        onChange={handleChange}
-                                    />
-                                    <label htmlFor="vnpay">
-                                        <span> Thanh toán qua VNPAY</span>
-                                    </label>
-                                </div>
+
                                 <div className="payment-option">
                                     <input
                                         type="radio"

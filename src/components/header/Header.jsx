@@ -22,10 +22,12 @@ import ChangePasswordModal from "../../page/account/ChangePasswordModal";
 import {NotificationContext} from "../NotificationProvider";
 import SearchBar from "../../page/client/SearchBar";
 import {getProductDetailById} from "../../Redux/actions/ProductThunk";
-import {useDispatch} from "react-redux";
+import {useDispatch, useStore} from "react-redux";
 import {totalCartItem} from "../../Redux/actions/CartItemThunk";
 import {MoneyCollectOutlined} from "@ant-design/icons";
 import {getUserBalance} from "../../Redux/actions/UserThunk";
+import {TOKEN, LOGOUT_SUCCESS} from "../../Utils/Setting/Config";
+import {onLoginSuccess} from "../../Service/setupAxiosInterceptors";
 const Header = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -101,9 +103,12 @@ const Header = () => {
         setShowLoginModal(true);
     };
 
+    const store = useStore();
+
     const handleLogout = () => {
         localStorage.removeItem('USER_LOGIN');
-        localStorage.removeItem('TOKEN');
+        localStorage.removeItem(TOKEN);
+        dispatch({ type: LOGOUT_SUCCESS });
         setUserData(null);
         navigate('/');
     };
@@ -115,6 +120,8 @@ const Header = () => {
     const handleLoginSuccess = (userData) => {
         setUserData(userData);
         setShowLoginModal(false);
+        // Reschedule auto-logout timer for the new token
+        onLoginSuccess(store);
     };
 
     const handleRegisterSuccess = () => {

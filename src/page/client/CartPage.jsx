@@ -97,7 +97,7 @@ const CartPage = () => {
         setSelectAll(checked);
     };
 
-    const { selectedSubtotal, selectedDiscountValue, shippingFee, selectedTotal } = useMemo(() => {
+    const { selectedSubtotal, selectedDiscountValue, selectedTotal } = useMemo(() => {
         const subtotal = cartItems
             .filter(item => selectedProducts.includes(item.id))
             .reduce((sum, item) => sum + (item.basePrice * item.quantity), 0);
@@ -111,17 +111,11 @@ const CartPage = () => {
             }
         }
 
-        let calculatedShippingFee = SHIPPING_FEE;
-        if (appliedVoucher?.code === "FREESHIP" || subtotal >= FREE_SHIPPING_THRESHOLD) {
-            calculatedShippingFee = 0;
-        }
-
-        const total = Math.max(0, subtotal - discountValue + calculatedShippingFee);
+        const total = Math.max(0, subtotal - discountValue);
 
         return {
             selectedSubtotal: subtotal,
             selectedDiscountValue: discountValue,
-            shippingFee: calculatedShippingFee,
             selectedTotal: total
         };
     }, [selectedProducts, appliedVoucher, cartItems]);
@@ -200,7 +194,7 @@ const CartPage = () => {
         } else if (voucher.discountType === 'FIXED') {
             successMessage += ` (Giảm ${voucher.discountValue.toLocaleString()}₫)`;
         } else if (voucher.code === "FREESHIP") {
-            successMessage = "Áp dụng thành công mã miễn phí vận chuyển";
+            successMessage = `Áp dụng thành công mã ${voucher.code}`;
         }
 
         message.success(successMessage);
@@ -240,7 +234,7 @@ const CartPage = () => {
                     orderInfo: `Thanh toán ${selectedTotal.toLocaleString()}₫ qua ${paymentMethod}`,
                     cartItems: selectedItems,
                     voucher: appliedVoucher,
-                    shippingFee: shippingFee,
+                    shippingFee: 0,
                     subtotal: selectedSubtotal,
                     discount: selectedDiscountValue
                 }
@@ -535,9 +529,7 @@ const CartPage = () => {
                                             {appliedVoucher.discountType === 'FIXED' && (
                                                 <span> (Giảm {appliedVoucher.discountValue.toLocaleString()}₫)</span>
                                             )}
-                                            {appliedVoucher.code === "FREESHIP" && (
-                                                <span> (Miễn phí vận chuyển)</span>
-                                            )}
+
                                         </span>
                                     </div>
                                 )}
@@ -555,12 +547,6 @@ const CartPage = () => {
                                 </div>
                             )}
 
-                            <div className="price-row">
-                                <span>Phí vận chuyển</span>
-                                <span>
-                                    {shippingFee === 0 ? "Miễn phí" : `${shippingFee.toLocaleString()}₫`}
-                                </span>
-                            </div>
 
                             <div className="divider"></div>
 
@@ -586,15 +572,6 @@ const CartPage = () => {
 
                     <div className="card benefits-card">
                         <div className="card-content">
-                            <div className="benefit-item">
-                                <div className="benefit-icon">
-                                    <ShoppingBag className="icon" />
-                                </div>
-                                <div>
-                                    <p className="benefit-title">Miễn phí vận chuyển</p>
-                                    <p className="benefit-description">Cho đơn hàng từ {FREE_SHIPPING_THRESHOLD.toLocaleString()}₫</p>
-                                </div>
-                            </div>
                             <div className="security-badge">
                                 <ShieldCheck className="icon" />
                                 <span>Thanh toán an toàn</span>

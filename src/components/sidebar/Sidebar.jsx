@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { 
   Laptop, 
   ShoppingBag, 
@@ -14,12 +15,15 @@ import {
 } from 'lucide-react';
 import './sidebar.scss';
 import {MessageOutlined} from "@ant-design/icons";
+import {LOGOUT_SUCCESS} from "../../Utils/Setting/Config";
 
 const Sidebar = ({ isCollapsed }) => {
   const location = useLocation();
+  const dispatch = useDispatch();
   console.log(location.pathname);
   const handleLogout = () => {
     localStorage.clear();
+    dispatch({ type: LOGOUT_SUCCESS });
     window.location.href = '/'; // Redirect to home page after logout
   };
 

@@ -2,29 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {  Button, Carousel } from 'antd';
 import '../../components/header/Header.css';
-import banner1 from '../../assets/10284957.jpg';
-import banner2 from '../../assets/5990174.jpg';
-import banner3 from '../../assets/122.jpg';
+import banner3 from '../../assets/122.png';
 
 const HeroSection = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const navigate = useNavigate();
 
     const banners = [
-        {
-            id: 1,
-            title: "Laptop Gaming Cao Cấp",
-            subtitle: "Trải nghiệm gaming đỉnh cao với hiệu năng vượt trội và thiết kế sang trọng",
-            image: banner1,
-            buttonText: "Mua ngay",
-        },
-        {
-            id: 2,
-            title: "Laptop Văn Phòng",
-            subtitle: "Nhẹ nhàng, mỏng gọn, hiệu năng ổn định cho công việc",
-            image: banner2,
-            buttonText: "Khám phá",
-        },
         {
             id: 3,
             title: "Phụ Kiện Chính Hãng",
