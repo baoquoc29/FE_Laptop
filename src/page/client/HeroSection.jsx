@@ -10,6 +10,7 @@ const HeroSection = () => {
 
     const banners = [
         {
+
             id: 3,
             title: "Phụ Kiện Chính Hãng",
             subtitle: "Đầy đủ phụ kiện laptop với giá tốt nhất thị trường",
