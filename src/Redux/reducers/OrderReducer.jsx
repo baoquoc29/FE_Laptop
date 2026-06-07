@@ -6,6 +6,9 @@ const initialState = {
         totalElements: 0,
         totalPages: 0,
     },
+    totalRevenue: 0,
+    revenueYears: [],
+    dashboardSummary: null,
     loading: false,
     error: null
 };
@@ -22,6 +25,30 @@ export const OrderReducer = (state = initialState, action) => {
                     totalElements: action.payload.totalElements || 0,
                     totalPages: action.payload.totalPages || 0,
                 },
+                loading: false,
+                error: null
+            };
+
+        case 'GET_TOTAL_REVENUE':
+            return {
+                ...state,
+                totalRevenue: action.payload,
+                loading: false,
+                error: null
+            };
+
+        case 'GET_REVENUE_BY_YEAR':
+            return {
+                ...state,
+                revenueYears: action.payload,
+                loading: false,
+                error: null
+            };
+
+        case 'GET_DASHBOARD_SUMMARY':
+            return {
+                ...state,
+                dashboardSummary: action.payload,
                 loading: false,
                 error: null
             };

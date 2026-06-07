@@ -31,7 +31,7 @@ import {
   FilePdfOutlined // Thêm import icon PDF
 } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
-import { getAllOrders, updateOrderStatus, acceptRefund } from "../../../Redux/actions/OrderItemThunk";
+import { getAllOrders, updateOrderStatus, acceptRefund, getTotalRevenue, getRevenueByYear, getDashboardSummary } from "../../../Redux/actions/OrderItemThunk";
 import dayjs from 'dayjs';
 import { NotificationContext } from '../../../components/NotificationProvider';
 import { jsPDF } from 'jspdf';
@@ -264,6 +264,11 @@ const OrderManagement = () => {
             notification.success({
               message: "Cập nhật trạng thái đơn hàng thành công"
             });
+            if (values.status === "COMPLETED") {
+              dispatch(getTotalRevenue());
+              dispatch(getRevenueByYear());
+              dispatch(getDashboardSummary(new Date().getFullYear()));
+            }
             fetchOrders();
             setIsStatusUpdateVisible(false);
           } else {

@@ -185,3 +185,63 @@ export const acceptRefund = (id) => async (dispatch) => {
         throw error;
     }
 }
+
+export const getTotalRevenue = () => async (dispatch) => {
+    try {
+        const response = await orderItemService.getTotalRevenue();
+
+        if (response) {
+            dispatch({
+                type: "GET_TOTAL_REVENUE",
+                payload: response.data,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu doanh thu tổng.");
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy doanh thu tổng:", error);
+        throw error;
+    }
+};
+
+export const getRevenueByYear = () => async (dispatch) => {
+    try {
+        const response = await orderItemService.getRevenueByYear();
+
+        if (response) {
+            dispatch({
+                type: "GET_REVENUE_BY_YEAR",
+                payload: response.data,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu doanh thu theo năm.");
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy doanh thu theo năm:", error);
+        throw error;
+    }
+};
+
+export const getDashboardSummary = (year) => async (dispatch) => {
+    try {
+        const response = await orderItemService.getDashboardSummary(year);
+
+        if (response) {
+            dispatch({
+                type: "GET_DASHBOARD_SUMMARY",
+                payload: response.data,
+            });
+        } else {
+            console.warn("⚠️ Server không trả về dữ liệu dashboard summary.");
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy dữ liệu dashboard summary:", error);
+        throw error;
+    }
+};

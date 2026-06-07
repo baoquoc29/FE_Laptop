@@ -51,6 +51,15 @@ export class OrderItemService extends baseService {
     revenueByMonth = (year) => {
         return this.get(`api/v1/revenue/month/${year}`,true);
     }
+    getTotalRevenue = () => {
+        return this.get('api/v1/revenue/total', true);
+    }
+    getRevenueByYear = () => {
+        return this.get('api/v1/revenue/year', true);
+    }
+    getDashboardSummary = (year) => {
+        return this.get(`api/v1/revenue/dashboard-summary/${year}`, true);
+    }
 
     acceptRefund = (id) => {
         return this.put(`api/v1/order/accept/refund/${id}`,{});

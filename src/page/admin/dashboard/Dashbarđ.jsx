@@ -22,13 +22,14 @@ import {
   UserOutlined
 } from '@ant-design/icons';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { revenueByMonth } from "../../../Redux/actions/OrderItemThunk";
-import { useDispatch } from "react-redux";
+import { revenueByMonth, getDashboardSummary } from "../../../Redux/actions/OrderItemThunk";
+import { useDispatch, useSelector } from "react-redux";
 import * as XLSX from 'xlsx';
 
 const DashboardPage = () => {
   const dispatch = useDispatch();
-  const [selectedYear, setSelectedYear] = useState("2025");
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [monthlyData, setMonthlyData] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -43,10 +44,13 @@ const DashboardPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await dispatch(revenueByMonth(selectedYear));
-        if (response) {
+        const [monthRes] = await Promise.all([
+          dispatch(revenueByMonth(selectedYear)),
+          dispatch(getDashboardSummary(selectedYear))
+        ]);
+        if (monthRes) {
           // Transform API data to match our format
-          const transformedData = response.map(item => ({
+          const transformedData = monthRes.map(item => ({
             month: monthNames[item.month - 1],
             revenue: item.totalRevenue,
             customers: item.customers,
@@ -65,18 +69,45 @@ const DashboardPage = () => {
     fetchData();
   }, [dispatch, selectedYear]);
 
-  // Calculate totals from API data
-  const totalRevenue = monthlyData.reduce((sum, item) => sum + (item.revenue || 0), 0);
-  const totalCustomers = monthlyData.reduce((sum, item) => sum + (item.customers || 0), 0);
-  const totalLaptops = monthlyData.reduce((sum, item) => sum + (item.laptops || 0), 0);
+  // Get dashboard summary from Redux store
+  const dashboardSummary = useSelector(state => state.OrderReducer.dashboardSummary);
 
-  // Calculate growth (using previous year as comparison)
-  const revenueGrowth = monthlyData.length > 0 ?
-      ((monthlyData[monthlyData.length - 1].revenue - monthlyData[0].revenue) / monthlyData[0].revenue) * 100 : 0;
-  const customerGrowth = monthlyData.length > 0 ?
-      ((monthlyData[monthlyData.length - 1].customers - monthlyData[0].customers) / monthlyData[0].customers) * 100 : 0;
-  const laptopGrowth = monthlyData.length > 0 ?
-      ((monthlyData[monthlyData.length - 1].laptops - monthlyData[0].laptops) / monthlyData[0].laptops) * 100 : 0;
+  const totalRevenue = dashboardSummary?.revenue?.value ?? 0;
+  const totalCustomers = dashboardSummary?.customers?.value ?? 0;
+  const totalLaptops = dashboardSummary?.products?.value ?? 0;
+
+  const revenueGrowth = dashboardSummary?.revenue?.growthPercent ?? 0;
+  const customerGrowth = dashboardSummary?.customers?.growthPercent ?? 0;
+  const laptopGrowth = dashboardSummary?.products?.growthPercent ?? 0;
+
+  const renderGrowth = (growth) => {
+    if (isNaN(growth) || !isFinite(growth)) {
+      return (
+        <span style={{ color: '#8c8c8c', fontWeight: '500' }}>
+          0.0%
+        </span>
+      );
+    }
+    if (growth > 0) {
+      return (
+        <span style={{ color: '#3f8600', fontWeight: '500' }}>
+          <ArrowUpOutlined /> +{growth.toFixed(1)}%
+        </span>
+      );
+    } else if (growth < 0) {
+      return (
+        <span style={{ color: '#cf1322', fontWeight: '500' }}>
+          <ArrowDownOutlined /> {growth.toFixed(1)}%
+        </span>
+      );
+    } else {
+      return (
+        <span style={{ color: '#8c8c8c', fontWeight: '500' }}>
+          0.0%
+        </span>
+      );
+    }
+  };
 
   // Export to Excel function
   const exportToExcel = () => {
@@ -122,10 +153,11 @@ const DashboardPage = () => {
   };
 
   // Year dropdown menu
+  const yearsList = Array.from({ length: currentYear - 2023 + 1 }, (_, i) => 2023 + i);
   const yearMenu = (
       <Menu>
         <Menu.ItemGroup title="Chọn Năm">
-          {[2023, 2024, 2025].map(year => (
+          {yearsList.map(year => (
               <Menu.Item
                   key={year}
                   onClick={() => setSelectedYear(year.toString())}
@@ -226,17 +258,9 @@ const DashboardPage = () => {
                     formatter={value => `${value.toLocaleString('vi-VN')} VND`}
                 />
                 <div style={{ marginTop: '10px' }}>
-                  {revenueGrowth > 0 ? (
-                      <span style={{ color: '#3f8600' }}>
-                    <ArrowUpOutlined /> {Math.abs(revenueGrowth).toFixed(1)}%
-                  </span>
-                  ) : (
-                      <span style={{ color: '#cf1322' }}>
-                    <ArrowDownOutlined /> {Math.abs(revenueGrowth).toFixed(1)}%
-                  </span>
-                  )}
+                  {renderGrowth(revenueGrowth)}
                   <span style={{ marginLeft: '8px', color: 'rgba(0, 0, 0, 0.45)' }}>
-                  so với đầu năm
+                  so với năm trước
                 </span>
                 </div>
               </Card>
@@ -250,17 +274,9 @@ const DashboardPage = () => {
                     prefix={<UserOutlined />}
                 />
                 <div style={{ marginTop: '10px' }}>
-                  {customerGrowth > 0 ? (
-                      <span style={{ color: '#3f8600' }}>
-                    <ArrowUpOutlined /> {Math.abs(customerGrowth).toFixed(1)}%
-                  </span>
-                  ) : (
-                      <span style={{ color: '#cf1322' }}>
-                    <ArrowDownOutlined /> {Math.abs(customerGrowth).toFixed(1)}%
-                  </span>
-                  )}
+                  {renderGrowth(customerGrowth)}
                   <span style={{ marginLeft: '8px', color: 'rgba(0, 0, 0, 0.45)' }}>
-                  so với đầu năm
+                  so với năm trước
                 </span>
                 </div>
               </Card>
@@ -274,17 +290,9 @@ const DashboardPage = () => {
                     prefix={<LaptopOutlined />}
                 />
                 <div style={{ marginTop: '10px' }}>
-                  {laptopGrowth > 0 ? (
-                      <span style={{ color: '#3f8600' }}>
-                    <ArrowUpOutlined /> {Math.abs(laptopGrowth).toFixed(1)}%
-                  </span>
-                  ) : (
-                      <span style={{ color: '#cf1322' }}>
-                    <ArrowDownOutlined /> {Math.abs(laptopGrowth).toFixed(1)}%
-                  </span>
-                  )}
+                  {renderGrowth(laptopGrowth)}
                   <span style={{ marginLeft: '8px', color: 'rgba(0, 0, 0, 0.45)' }}>
-                  so với đầu năm
+                  so với năm trước
                 </span>
                 </div>
               </Card>
