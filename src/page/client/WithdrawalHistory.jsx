@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from "react";
 import {
     Card,
-    Statistic,
     Input,
     Select,
     Button,
     Tag,
-    Divider,
-    Space,
     Table,
     Tooltip,
-    Dropdown,
     Empty,
-    message
+    message,
+    Modal
 } from "antd";
 import {
     SearchOutlined,
     FilterOutlined,
-    DownloadOutlined,
     EyeOutlined,
-    MoreOutlined,
-    SortAscendingOutlined,
     CalendarOutlined,
     WalletOutlined,
     BankOutlined,
@@ -28,7 +22,8 @@ import {
     CheckCircleOutlined,
     ClockCircleOutlined,
     CloseCircleOutlined,
-    ExclamationCircleOutlined
+    ExclamationCircleOutlined,
+    InfoCircleOutlined
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllDrawl } from "../../Redux/actions/UserThunk";
@@ -60,7 +55,16 @@ const statusConfig = {
 
 const WithdrawalHistory = () => {
     const dispatch = useDispatch();
-    const { content: withdrawalData = [], loading } = useSelector(state => state.UserReducer.drawlList || {});
+    const drawlList = useSelector(state => state.UserReducer.drawlList);
+
+    // Xử lý dữ liệu an toàn khi Redux state ban đầu là mảng rỗng []
+    const withdrawalData = Array.isArray(drawlList) 
+        ? drawlList 
+        : (drawlList?.content || []);
+        
+    const totalElements = Array.isArray(drawlList) 
+        ? drawlList.length 
+        : (drawlList?.totalElements || 0);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -70,18 +74,26 @@ const WithdrawalHistory = () => {
         current: 1,
         pageSize: 10,
     });
+    const [loading, setLoading] = useState(false);
+    const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    const handleViewDetails = (record) => {
+        setSelectedWithdrawal(record);
+        setIsModalVisible(true);
+    };
 
     // Format tiền tệ
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat("vi-VN", {
             style: "currency",
             currency: "VND",
-        }).format(amount);
+        }).format(amount || 0);
     };
 
     // Format ngày giờ
     const formatDateTime = (dateString) => {
-        if (!dateString) return "-";
+        if (!dateString) return { date: "-", time: "" };
         const date = new Date(dateString);
         return {
             date: date.toLocaleDateString("vi-VN"),
@@ -89,10 +101,9 @@ const WithdrawalHistory = () => {
         };
     };
 
-
-    // Thống kê
+    // Thống kê dựa trên toàn bộ list tải về
     const stats = {
-        total: withdrawalData.length,
+        total: totalElements,
         pending: withdrawalData.filter((item) => item.status === "PENDING").length,
         approved: withdrawalData.filter((item) => item.status === "APPROVED").length,
         rejected: withdrawalData.filter((item) => item.status === "REJECTED").length,
@@ -102,11 +113,11 @@ const WithdrawalHistory = () => {
             .reduce((sum, item) => sum + item.amount, 0),
     };
 
-    // Lọc và sắp xếp dữ liệu
+    // Lọc dữ liệu client side theo từ khóa tìm kiếm và bộ lọc trạng thái
     const filteredData = withdrawalData.filter(item => {
         const matchesSearch = searchTerm
-            ? item.id.toString().includes(searchTerm) ||
-            item.accountNumber.includes(searchTerm)
+            ? item.id?.toString().includes(searchTerm) ||
+              item.accountNumber?.toLowerCase().includes(searchTerm.toLowerCase())
             : true;
 
         const matchesStatus = statusFilter !== "all"
@@ -119,6 +130,7 @@ const WithdrawalHistory = () => {
     // Gọi API khi thay đổi bộ lọc hoặc phân trang
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true);
             try {
                 await dispatch(getAllDrawl(
                     null, // startDate
@@ -131,39 +143,46 @@ const WithdrawalHistory = () => {
             } catch (error) {
                 message.error("Lỗi khi tải dữ liệu rút tiền");
                 console.error(error);
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchData();
     }, [dispatch, pagination.current, pagination.pageSize, sortBy, sortDirection]);
 
-    // Columns for table
+    // Định nghĩa cột hiển thị trong bảng
     const columns = [
         {
             title: 'Mã giao dịch',
             dataIndex: 'id',
             key: 'id',
-            render: (id) => <span className="font-semibold">{id}</span>,
+            render: (id) => <span className="transaction-id-label">#{id}</span>,
         },
         {
             title: 'Người yêu cầu',
             dataIndex: ['user', 'fullName'],
             key: 'user',
-            render: (fullName) => <span className="font-semibold">{fullName}</span>,
+            render: (fullName) => <span className="user-fullname-label">{fullName || "-"}</span>,
         },
         {
             title: 'Số tiền',
             dataIndex: 'amount',
             key: 'amount',
-            render: (amount) => <span className="font-bold">{formatCurrency(amount)}</span>,
+            render: (amount) => <span className="amount-label">{formatCurrency(amount)}</span>,
+            sorter: true,
         },
         {
             title: 'Phương thức',
             key: 'method',
             render: (_, record) => (
-                <div className="flex items-center gap-2">
-                    {record.requestNote.includes("MoMo") ? <MobileOutlined /> : <BankOutlined />}
-                    {record.requestNote}
+                <div className="method-label-container">
+                    {record.requestNote?.includes("MoMo") ? (
+                        <MobileOutlined className="method-icon-momo" />
+                    ) : (
+                        <BankOutlined className="method-icon-bank" />
+                    )}
+                    <span className="method-text-span">{record.requestNote || "Chuyển khoản"}</span>
                 </div>
             ),
         },
@@ -171,6 +190,7 @@ const WithdrawalHistory = () => {
             title: 'Số tài khoản',
             dataIndex: 'accountNumber',
             key: 'accountNumber',
+            render: (accNum) => <span className="account-number-label">{accNum}</span>,
         },
         {
             title: 'Ngày yêu cầu',
@@ -179,13 +199,36 @@ const WithdrawalHistory = () => {
             render: (dateString) => {
                 const dateTime = formatDateTime(dateString);
                 return (
-                    <div className="flex items-center gap-1">
-                        <CalendarOutlined />
-                        {dateTime.date} {dateTime.time}
+                    <div className="date-label-container">
+                        <CalendarOutlined className="date-icon" />
+                        <span>
+                            {dateTime.date} <span className="time-subtext">{dateTime.time}</span>
+                        </span>
                     </div>
                 );
             },
             sorter: true,
+        },
+        {
+            title: 'Phản hồi từ Admin',
+            dataIndex: 'adminNote',
+            key: 'adminNote',
+            render: (adminNote, record) => {
+                if (!adminNote) {
+                    return <span className="admin-note-none">-</span>;
+                }
+                const statusClass = record.status?.toLowerCase() || "pending";
+                return (
+                    <Tooltip title={adminNote} placement="topLeft">
+                        <div 
+                            className={`admin-note-bubble admin-note-${statusClass}`}
+                            onClick={() => handleViewDetails(record)}
+                        >
+                            {adminNote}
+                        </div>
+                    </Tooltip>
+                );
+            },
         },
         {
             title: 'Trạng thái',
@@ -194,7 +237,7 @@ const WithdrawalHistory = () => {
             render: (status) => {
                 const config = statusConfig[status] || statusConfig.PENDING;
                 return (
-                    <Tag icon={config.icon} color={config.color}>
+                    <Tag icon={config.icon} color={config.color} className={`status-tag-${status.toLowerCase()}`}>
                         {config.label}
                     </Tag>
                 );
@@ -206,11 +249,25 @@ const WithdrawalHistory = () => {
                 { text: 'Hoàn thành', value: 'COMPLETED' },
             ],
         },
+        {
+            title: 'Hành động',
+            key: 'action',
+            render: (_, record) => (
+                <Button 
+                    type="link" 
+                    icon={<EyeOutlined />} 
+                    onClick={() => handleViewDetails(record)}
+                    className="view-detail-btn"
+                >
+                    Chi tiết
+                </Button>
+            ),
+        }
     ];
 
-    // Xử lý thay đổi phân trang và sắp xếp
-    const handleTableChange = (pagination, filters, sorter) => {
-        setPagination(pagination);
+    // Xử lý thay đổi phân trang, sắp xếp và lọc từ bảng Ant Design
+    const handleTableChange = (newPagination, filters, sorter) => {
+        setPagination(newPagination);
 
         if (sorter.field) {
             setSortBy(sorter.field);
@@ -225,77 +282,155 @@ const WithdrawalHistory = () => {
     return (
         <div className="withdrawal-history-container">
             {/* Header */}
-            <div className="withdrawal-header">
-                <div className="container">
-                    <div className="header-content">
+            <div className="withdrawal-history-header">
+                <div className="header-overlay"></div>
+                <div className="container header-container-inner">
+                    <div className="header-text-section">
+                        <div className="header-icon-wrapper">
+                            <WalletOutlined />
+                        </div>
                         <div>
                             <h1>Lịch sử rút tiền</h1>
-                            <p>Quản lý và theo dõi các giao dịch rút tiền</p>
+                            <p>Theo dõi trạng thái và quản lý các yêu cầu rút tiền của bạn</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="container">
+            <div className="container history-content-wrapper">
                 {/* Thống kê */}
                 <div className="stats-grid">
-                    <Card>
-                        <Statistic title="Tổng giao dịch" value={stats.total} />
-                    </Card>
-                    <Card>
-                        <Statistic title="Đang chờ" value={stats.pending} valueStyle={{ color: '#fa8c16' }} />
-                    </Card>
-                    <Card>
-                        <Statistic title="Đã duyệt" value={stats.approved} valueStyle={{ color: '#1890ff' }} />
-                    </Card>
-                    <Card>
-                        <Statistic title="Đã từ chối" value={stats.rejected} valueStyle={{ color: '#f5222d' }} />
-                    </Card>
-                    <Card>
-                        <Statistic title="Hoàn thành" value={stats.completed} valueStyle={{ color: '#52c41a' }} />
-                    </Card>
-                    <Card>
-                        <Statistic title="Tổng đã rút" value={formatCurrency(stats.totalAmount)} />
-                    </Card>
+                    <div className="stat-card stat-total">
+                        <div className="stat-card-inner">
+                            <div className="stat-icon-container">
+                                <WalletOutlined />
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-title">Tổng yêu cầu</span>
+                                <span className="stat-value">{stats.total}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="stat-card stat-pending">
+                        <div className="stat-card-inner">
+                            <div className="stat-icon-container">
+                                <ClockCircleOutlined />
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-title">Đang chờ</span>
+                                <span className="stat-value">{stats.pending}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="stat-card stat-approved">
+                        <div className="stat-card-inner">
+                            <div className="stat-icon-container">
+                                <ExclamationCircleOutlined />
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-title">Đã duyệt</span>
+                                <span className="stat-value">{stats.approved}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="stat-card stat-completed">
+                        <div className="stat-card-inner">
+                            <div className="stat-icon-container">
+                                <CheckCircleOutlined />
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-title">Thành công</span>
+                                <span className="stat-value">{stats.completed}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="stat-card stat-rejected">
+                        <div className="stat-card-inner">
+                            <div className="stat-icon-container">
+                                <CloseCircleOutlined />
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-title">Bị từ chối</span>
+                                <span className="stat-value">{stats.rejected}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="stat-card stat-amount">
+                        <div className="stat-card-inner">
+                            <div className="stat-icon-container">
+                                <BankOutlined />
+                            </div>
+                            <div className="stat-info">
+                                <span className="stat-title">Tổng đã nhận</span>
+                                <span className="stat-value">{formatCurrency(stats.totalAmount)}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Bộ lọc và tìm kiếm */}
                 <Card className="filter-history-card">
+                    <div className="filter-history-header-inline">
+                        <FilterOutlined />
+                        <span>Bộ lọc tìm kiếm</span>
+                    </div>
                     <div className="filter-history-content">
                         <div className="search-history-input">
                             <Input
-                                placeholder="Tìm kiếm theo mã giao dịch hoặc số tài khoản..."
+                                placeholder="Nhập mã giao dịch hoặc số tài khoản..."
                                 prefix={<SearchOutlined />}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
+                                allowClear
                             />
                         </div>
                         <Select
                             value={statusFilter}
                             onChange={setStatusFilter}
                             className="status-history-select"
-                            placeholder="Trạng thái"
-                            allowClear
+                            placeholder="Chọn trạng thái"
                         >
-                            <Select.Option value="all">Tất cả</Select.Option>
+                            <Select.Option value="all">Tất cả trạng thái</Select.Option>
                             <Select.Option value="PENDING">Đang chờ</Select.Option>
                             <Select.Option value="APPROVED">Đã duyệt</Select.Option>
                             <Select.Option value="REJECTED">Đã từ chối</Select.Option>
                             <Select.Option value="COMPLETED">Hoàn thành</Select.Option>
                         </Select>
-                        <Button type="primary" onClick={() => setPagination({...pagination, current: 1})}>
-                            Áp dụng
-                        </Button>
+                        
+                        <div className="filter-actions-group">
+                            <Button 
+                                type="primary" 
+                                className="apply-filter-btn"
+                                onClick={() => setPagination({...pagination, current: 1})}
+                            >
+                                Lọc kết quả
+                            </Button>
+                            {(searchTerm || statusFilter !== "all") && (
+                                <Button 
+                                    type="text" 
+                                    className="reset-filter-btn"
+                                    onClick={() => {
+                                        setSearchTerm("");
+                                        setStatusFilter("all");
+                                        setPagination({...pagination, current: 1});
+                                    }}
+                                >
+                                    Đặt lại
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </Card>
 
                 {/* Danh sách giao dịch */}
-                <Card>
-                    <div className="card-header">
-                        <WalletOutlined />
-                        <span>Danh sách giao dịch ({filteredData.length})</span>
+                <Card className="table-history-card">
+                    <div className="table-card-header">
+                        <div className="table-title-left">
+                            <span className="bullet-indicator"></span>
+                            <span>Danh sách yêu cầu rút tiền ({filteredData.length})</span>
+                        </div>
                     </div>
-                    <Divider style={{ margin: 0 }} />
+                    
                     <Table
                         columns={columns}
                         dataSource={filteredData}
@@ -303,21 +438,22 @@ const WithdrawalHistory = () => {
                         loading={loading}
                         pagination={{
                             ...pagination,
-                            total: withdrawalData.totalElements || 0,
+                            total: totalElements,
                             showSizeChanger: true,
                             pageSizeOptions: ['10', '20', '50', '100'],
-                            showTotal: (total) => `Tổng ${total} giao dịch`,
+                            showTotal: (total) => `Tổng số: ${total} giao dịch`,
                         }}
                         onChange={handleTableChange}
+                        className="custom-table"
                         locale={{
                             emptyText: (
                                 <Empty
-                                    image={<SearchOutlined style={{ fontSize: 48, color: '#bfbfbf' }} />}
+                                    image={<SearchOutlined className="empty-search-icon" />}
                                     description={
-                                        <>
-                                            <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Không tìm thấy giao dịch</div>
-                                            <div>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</div>
-                                        </>
+                                        <div className="empty-description">
+                                            <div className="empty-title">Không tìm thấy giao dịch nào</div>
+                                            <div className="empty-subtitle">Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn</div>
+                                        </div>
                                     }
                                 />
                             ),
@@ -325,6 +461,95 @@ const WithdrawalHistory = () => {
                     />
                 </Card>
             </div>
+
+            {/* Modal Chi tiết */}
+            <Modal
+                title={
+                    <div className="detail-modal-title">
+                        <div className="modal-title-icon-wrapper">
+                            <WalletOutlined />
+                        </div>
+                        <div>
+                            <h3>Chi tiết giao dịch</h3>
+                            <span className="modal-subtitle">Thông tin chi tiết yêu cầu rút tiền</span>
+                        </div>
+                    </div>
+                }
+                open={isModalVisible}
+                onCancel={() => setIsModalVisible(false)}
+                footer={[
+                    <Button key="close" type="primary" className="modal-close-btn" onClick={() => setIsModalVisible(false)}>
+                        Đóng cửa sổ
+                    </Button>
+                ]}
+                width={550}
+                centered
+                className="premium-detail-modal"
+            >
+                {selectedWithdrawal && (
+                    <div className="modal-detail-body">
+                        {/* Mã giao dịch và trạng thái */}
+                        <div className="modal-detail-header-card">
+                            <div className="header-card-row">
+                                <span className="modal-tx-code">Mã giao dịch: <strong>#{selectedWithdrawal.id}</strong></span>
+                                <span className="modal-tx-date">
+                                    {formatDateTime(selectedWithdrawal.createdAt).date} {formatDateTime(selectedWithdrawal.createdAt).time}
+                                </span>
+                            </div>
+                            <div className="header-card-status">
+                                <Tag icon={statusConfig[selectedWithdrawal.status]?.icon} color={statusConfig[selectedWithdrawal.status]?.color} className="status-tag-large">
+                                    {statusConfig[selectedWithdrawal.status]?.label.toUpperCase()}
+                                </Tag>
+                            </div>
+                        </div>
+
+                        {/* Bảng chi tiết */}
+                        <div className="detail-info-block">
+                            <h4 className="section-subtitle">Thông tin giao dịch</h4>
+                            <div className="detail-info-grid">
+                                <div className="info-row">
+                                    <span className="info-label">Người yêu cầu:</span>
+                                    <span className="info-value font-semibold">{selectedWithdrawal.user?.fullName || "-"}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="info-label">Số tiền rút:</span>
+                                    <span className="info-value amount-highlight">{formatCurrency(selectedWithdrawal.amount)}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="info-label">Phương thức:</span>
+                                    <span className="info-value flex-align-center">
+                                        {selectedWithdrawal.requestNote?.includes("MoMo") ? (
+                                            <MobileOutlined className="method-icon momo-icon" />
+                                        ) : (
+                                            <BankOutlined className="method-icon bank-icon" />
+                                        )}
+                                        <span className="method-text">{selectedWithdrawal.requestNote || "Chuyển khoản"}</span>
+                                    </span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="info-label">Số tài khoản:</span>
+                                    <span className="info-value account-value-copy">{selectedWithdrawal.accountNumber}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Phản hồi từ Admin */}
+                        <div className={`detail-feedback-block feedback-${selectedWithdrawal.status?.toLowerCase() || "pending"}`}>
+                            <div className="feedback-header">
+                                <InfoCircleOutlined className="feedback-icon" />
+                                <span>Phản hồi từ Ban Quản Trị</span>
+                            </div>
+                            <div className="feedback-content">
+                                {selectedWithdrawal.adminNote ? (
+                                    <p className="feedback-note-text">"{selectedWithdrawal.adminNote}"</p>
+                                ) : (
+                                    <p className="feedback-note-empty">Yêu cầu này đang trong trạng thái xử lý hoặc chưa có ghi chú phản hồi từ Admin.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 };
