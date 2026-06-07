@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
-import { Table, Input, Button, Space, Modal, message, ConfigProvider, Select, Typography, Pagination, Tag } from 'antd';
-import { SearchOutlined, LockOutlined, UnlockOutlined, SortAscendingOutlined, SortDescendingOutlined, ExclamationCircleFilled } from '@ant-design/icons';
+import { Table, Input, Button, Space, Modal, message, ConfigProvider, Select, Typography, Pagination, Tag, Form, InputNumber, Switch } from 'antd';
+import { SearchOutlined, LockOutlined, UnlockOutlined, SortAscendingOutlined, SortDescendingOutlined, ExclamationCircleFilled, EditOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
-import { adminGetAllUser, blockUser } from '../../../Redux/actions/UserThunk';
+import { adminGetAllUser, blockUser, getAdminUserDetail, updateAdminUser } from '../../../Redux/actions/UserThunk';
 import dayjs from 'dayjs';
 import {NotificationContext} from "../../../components/NotificationProvider";
 
@@ -28,6 +28,12 @@ const UserManagement = () => {
   const notification = useContext(NotificationContext);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
+
+  // Edit User Modal states
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editFormLoading, setEditFormLoading] = useState(false);
+  const [editForm] = Form.useForm();
 
   const fetchUsers = async () => {
     try {
@@ -143,6 +149,82 @@ const UserManagement = () => {
     }
   };
 
+  const handleViewEditUser = async (record) => {
+    try {
+      setEditFormLoading(true);
+      setIsEditModalVisible(true);
+      const response = await dispatch(getAdminUserDetail(record.id));
+      if (response && response.code === 200) {
+        setEditingUser(response.data);
+        editForm.setFieldsValue({
+          username: response.data.username,
+          fullName: response.data.fullName,
+          email: response.data.email,
+          phone: response.data.phone || '',
+          balance: response.data.balance,
+          isBlocked: response.data.isBlocked,
+        });
+      } else {
+        notification.error({
+          message: "Lỗi",
+          description: response?.message || "Không thể lấy chi tiết người dùng."
+        });
+        setIsEditModalVisible(false);
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy chi tiết admin user:", error);
+      notification.error({
+        message: "Lỗi",
+        description: "Không thể lấy thông tin chi tiết người dùng."
+      });
+      setIsEditModalVisible(false);
+    } finally {
+      setEditFormLoading(false);
+    }
+  };
+
+  const handleEditSubmit = async (values) => {
+    if (!editingUser) return;
+    try {
+      setEditFormLoading(true);
+      const response = await dispatch(updateAdminUser(editingUser.id, {
+        fullName: values.fullName,
+        email: values.email,
+        phone: values.phone || '',
+        balance: values.balance,
+        isBlocked: values.isBlocked
+      }));
+
+      if (response && response.code === 200) {
+        notification.success({
+          message: "Thành công",
+          description: "Cập nhật tài khoản thành công."
+        });
+        setIsEditModalVisible(false);
+        fetchUsers();
+      } else {
+        notification.error({
+          message: "Thất bại",
+          description: response?.message || "Cập nhật tài khoản thất bại."
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi cập nhật admin user:", error);
+      let errMsg = error.response?.data?.message || error.message || "Cập nhật tài khoản thất bại.";
+      if (errMsg.includes("Email already exists")) {
+        errMsg = "Email đã tồn tại";
+      } else if (errMsg.includes("Balance must not be negative")) {
+        errMsg = "Số dư không được âm";
+      }
+      notification.error({
+        message: "Lỗi cập nhật",
+        description: errMsg
+      });
+    } finally {
+      setEditFormLoading(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     return dayjs(dateString).format('DD/MM/YYYY HH:mm');
@@ -210,16 +292,26 @@ const UserManagement = () => {
       title: 'Thao tác',
       key: 'action',
       render: (_, record) => (
-        <Button 
-          type={record.isBlocked ? "primary" : "danger"}
-          icon={record.isBlocked ? <UnlockOutlined /> : <LockOutlined />}
-          onClick={() => showBlockModal(record)}
-          size="middle"
-          title={record.isBlocked ? "Mở khóa" : "Khóa"}
-          style={{ borderRadius: '4px' }}
-        />
+        <Space size="middle">
+          <Button 
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => handleViewEditUser(record)}
+            size="middle"
+            title="Xem/Sửa"
+            style={{ borderRadius: '4px' }}
+          />
+          <Button 
+            type={record.isBlocked ? "primary" : "danger"}
+            icon={record.isBlocked ? <UnlockOutlined /> : <LockOutlined />}
+            onClick={() => showBlockModal(record)}
+            size="middle"
+            title={record.isBlocked ? "Mở khóa" : "Khóa"}
+            style={{ borderRadius: '4px' }}
+          />
+        </Space>
       ),
-      width: 80,
+      width: 140,
       align: 'center'
     },
   ];
@@ -389,6 +481,109 @@ const UserManagement = () => {
             Người dùng sẽ không thể đăng nhập khi bị khóa tài khoản.
           </p>
         )}
+      </Modal>
+
+      {/* View/Edit Modal */}
+      <Modal
+        title="Chi tiết & Chỉnh sửa tài khoản"
+        visible={isEditModalVisible}
+        onCancel={() => setIsEditModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setIsEditModalVisible(false)}>
+            Hủy
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            loading={editFormLoading} 
+            onClick={() => editForm.submit()}
+          >
+            Lưu thay đổi
+          </Button>
+        ]}
+        width={600}
+      >
+        <Form
+          form={editForm}
+          layout="vertical"
+          onFinish={handleEditSubmit}
+          disabled={editFormLoading}
+        >
+          <Form.Item
+            name="username"
+            label="Tên đăng nhập"
+          >
+            <Input disabled />
+          </Form.Item>
+
+          <Form.Item
+            name="fullName"
+            label="Họ tên"
+            rules={[
+              { required: true, message: 'Vui lòng nhập họ tên' },
+              { whitespace: true, message: 'Họ tên không được chỉ chứa khoảng trắng' }
+            ]}
+          >
+            <Input placeholder="Nhập họ tên" />
+          </Form.Item>
+
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: 'Vui lòng nhập email' },
+              { type: 'email', message: 'Email không đúng định dạng' }
+            ]}
+          >
+            <Input placeholder="Nhập email" />
+          </Form.Item>
+
+          <Form.Item
+            name="phone"
+            label="Số điện thoại"
+          >
+            <Input placeholder="Nhập số điện thoại (tùy chọn)" />
+          </Form.Item>
+
+          <Form.Item
+            name="balance"
+            label="Số dư"
+            rules={[
+              { required: true, message: 'Vui lòng nhập số dư' }
+            ]}
+          >
+            <InputNumber 
+              style={{ width: '100%' }} 
+              min={0} 
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/\$\s?|(,*)/g, '')}
+              placeholder="Nhập số dư (VND)" 
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="isBlocked"
+            label="Trạng thái tài khoản"
+            valuePropName="checked"
+          >
+            <Switch checkedChildren="Khóa" unCheckedChildren="Hoạt động" />
+          </Form.Item>
+
+          {editingUser && (
+            <div style={{ 
+              marginTop: 16, 
+              padding: '12px 16px', 
+              background: '#f8fafc', 
+              borderRadius: 8,
+              fontSize: '12px',
+              color: '#64748b'
+            }}>
+              <div><strong>ID:</strong> {editingUser.id}</div>
+              <div style={{ marginTop: 4 }}><strong>Ngày tạo:</strong> {formatDate(editingUser.createdAt)}</div>
+              <div style={{ marginTop: 4 }}><strong>Cập nhật lần cuối:</strong> {formatDate(editingUser.updatedAt)}</div>
+            </div>
+          )}
+        </Form>
       </Modal>
     </div>
     </ConfigProvider>

@@ -207,6 +207,26 @@ export const getAllDrawl = (startDate, endDate, page, size, sortBy, sortDirectio
         }
     } catch (error) {
         console.error("Đã xảy ra lỗi:", error);
-        throw error; // Truyền lỗi cho phần gọi useEffect
+        throw error;
+    }
+};
+
+export const getAdminUserDetail = (userId) => async (dispatch) => {
+    try {
+        const res = await userService.getAdminUserDetail(userId);
+        return res;
+    } catch (error) {
+        console.error("Lỗi khi lấy chi tiết admin user:", error);
+        throw error;
+    }
+};
+
+export const updateAdminUser = (userId, body) => async (dispatch) => {
+    try {
+        const res = await userService.updateAdminUser(userId, body);
+        return res;
+    } catch (error) {
+        console.error("Lỗi khi cập nhật admin user:", error);
+        throw error;
     }
 };

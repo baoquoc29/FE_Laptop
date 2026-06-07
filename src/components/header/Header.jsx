@@ -162,7 +162,7 @@ const Header = () => {
                 icon={<MoneyCollectOutlined size={16} />}
                 onClick={() => window.location.href = `/wallet/${userData.id}`}
             >
-               Rút tiền từ ví TechWallets
+               Ví TechWallets - Nạp & Rút tiền
             </Menu.Item>
             <Menu.Item
                 key="wallet-history"

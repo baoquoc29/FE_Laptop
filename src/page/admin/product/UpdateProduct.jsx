@@ -4,6 +4,7 @@ import {
   Card,
   Form,
   Input,
+  InputNumber,
   Button,
   Select,
   Upload,
@@ -1107,9 +1108,19 @@ const removeVariant = (optionIndex, variantIndex) => {
                       <Form.Item
                         name={['variants', optionIndex, variantIndex, 'stock']}
                         label="Số lượng"
-                        rules={[{ required: true, message: 'Vui lòng nhập số lượng!' }]}
+                        rules={[
+                          { required: true, message: 'Vui lòng nhập số lượng!' },
+                          {
+                            validator: (_, value) => {
+                              if (value !== undefined && value !== null && value < 0) {
+                                return Promise.reject(new Error('Số lượng không được âm!'));
+                              }
+                              return Promise.resolve();
+                            }
+                          }
+                        ]}
                       >
-                        <Input type="number" placeholder="0" />
+                        <InputNumber min={0} style={{ width: '100%' }} placeholder="0" />
                       </Form.Item>
                     </Col>
                   </Row>

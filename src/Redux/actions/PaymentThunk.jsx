@@ -53,5 +53,25 @@ export const check = (body) => async (dispatch) => {
     }
 };
 
+export const createWalletDepositUrl = (userId, amount) => async (dispatch) => {
+    try {
+        const res = await paymentService.createWalletDepositUrl(userId, amount);
+        return res;
+    } catch (error) {
+        console.error("Lỗi khi tạo URL nạp ví:", error);
+        throw error;
+    }
+};
+
+export const confirmWalletDeposit = (queryString) => async (dispatch) => {
+    try {
+        const res = await paymentService.confirmWalletDeposit(queryString);
+        return res;
+    } catch (error) {
+        console.error("Lỗi khi xác nhận nạp ví:", error);
+        throw error;
+    }
+};
+
 
 

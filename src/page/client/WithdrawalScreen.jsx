@@ -20,10 +20,12 @@ import {
     Typography,
     Space,
     Form,
-    InputNumber
+    InputNumber,
+    Tabs
 } from "antd";
 import "../style/WithdrawalScreen.css";
 import {getUserBalance, sendRequestDrawl} from "../../Redux/actions/UserThunk";
+import {createWalletDepositUrl} from "../../Redux/actions/PaymentThunk";
 import {useDispatch} from "react-redux";
 
 const { Step } = Steps;
@@ -85,6 +87,44 @@ const WithdrawalScreen = () => {
     const minWithdrawal = 50000; // 50,000 VND
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(true);
+
+    // Wallet Deposit state
+    const [activeTab, setActiveTab] = useState("deposit"); // Default to deposit tab
+    const [depositAmount, setDepositAmount] = useState("");
+    const [isDepositLoading, setIsDepositLoading] = useState(false);
+    const [depositError, setDepositError] = useState("");
+
+    const handleDepositSubmit = async () => {
+        const numAmount = Number(depositAmount);
+        if (!depositAmount || numAmount <= 0) {
+            setDepositError("Vui lòng nhập số tiền hợp lệ (> 0)");
+            return;
+        }
+        if (!Number.isInteger(numAmount)) {
+            setDepositError("Số tiền phải là số nguyên");
+            return;
+        }
+        if (numAmount < 10000) {
+            setDepositError("Số tiền tối thiểu để nạp qua VNPAY là 10,000 đ");
+            return;
+        }
+
+        setIsDepositLoading(true);
+        setDepositError("");
+        try {
+            const res = await dispatch(createWalletDepositUrl(userData.id, numAmount));
+            if (res && res.data) {
+                window.location.href = res.data;
+            } else {
+                setDepositError(res?.message || "Tạo giao dịch nạp tiền thất bại");
+                setIsDepositLoading(false);
+            }
+        } catch (err) {
+            console.error(err);
+            setDepositError("Có lỗi xảy ra khi tạo giao dịch nạp tiền");
+            setIsDepositLoading(false);
+        }
+    };
 
     const formatCurrency = (value) => {
         return new Intl.NumberFormat("vi-VN", {
@@ -233,17 +273,25 @@ const WithdrawalScreen = () => {
                 {/* Header */}
                 <div className="withdrawal-header">
                     <Title level={4} className="header-title">
-                        Rút tiền
+                        {activeTab === "withdraw" ? "Rút tiền từ ví" : "Nạp tiền vào ví"}
                     </Title>
                     <div className="header-placeholder" />
                 </div>
 
+                {/* Tab selector */}
+                <Tabs activeKey={activeTab} onChange={setActiveTab} centered size="large" style={{ marginBottom: 20 }}>
+                    <Tabs.TabPane tab="Nạp tiền VNPAY" key="deposit" />
+                    <Tabs.TabPane tab="Rút tiền từ ví" key="withdraw" />
+                </Tabs>
+
                 {/* Progress Indicator */}
-                <Steps current={step - 1} className="withdrawal-steps">
-                    <Step title="Thông tin" />
-                    <Step title="Xác nhận" />
-                    <Step title="Bảo mật" />
-                </Steps>
+                {activeTab === "withdraw" && (
+                    <Steps current={step - 1} className="withdrawal-steps">
+                        <Step title="Thông tin" />
+                        <Step title="Xác nhận" />
+                        <Step title="Bảo mật" />
+                    </Steps>
+                )}
 
                 {/* Balance Card */}
                 <Card className="balance-card">
@@ -263,8 +311,59 @@ const WithdrawalScreen = () => {
                     </div>
                 </Card>
 
+                {/* Deposit Form */}
+                {activeTab === "deposit" && (
+                    <Card>
+                        <div className="card-header">
+                            <Title level={5}>Nạp tiền vào ví qua VNPAY</Title>
+                            <Text type="secondary">Nhập số tiền bạn muốn nạp (Số tiền tối thiểu: 10,000 đ)</Text>
+                        </div>
+                        <div className="card-body" style={{ marginTop: 20 }}>
+                            <Form layout="vertical" onFinish={handleDepositSubmit}>
+                                <Form.Item label="Số tiền muốn nạp (VND)">
+                                    <InputNumber
+                                        placeholder="Nhập số tiền nạp"
+                                        value={depositAmount}
+                                        onChange={(val) => {
+                                            setDepositAmount(val);
+                                            setDepositError("");
+                                        }}
+                                        formatter={(value) =>
+                                            `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                                        }
+                                        parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                                        style={{ width: "100%" }}
+                                        precision={0}
+                                        min={10000}
+                                    />
+                                </Form.Item>
+
+                                {depositError && (
+                                    <Alert
+                                        message={depositError}
+                                        type="error"
+                                        showIcon
+                                        icon={<ExclamationCircleOutlined />}
+                                        style={{ marginBottom: 16 }}
+                                    />
+                                )}
+
+                                <Button
+                                    type="primary"
+                                    block
+                                    htmlType="submit"
+                                    loading={isDepositLoading}
+                                    disabled={!depositAmount || isDepositLoading}
+                                >
+                                    {isDepositLoading ? "Đang tạo liên kết thanh toán..." : "Nạp tiền ngay"}
+                                </Button>
+                            </Form>
+                        </div>
+                    </Card>
+                )}
+
                 {/* Main Content */}
-                {step === 1 && (
+                {activeTab === "withdraw" && step === 1 && (
                     <Card>
                         <div className="card-header">
                             <Title level={5}>Thông tin rút tiền</Title>
@@ -384,7 +483,7 @@ const WithdrawalScreen = () => {
                     </Card>
                 )}
 
-                {step === 2 && (
+                {activeTab === "withdraw" && step === 2 && (
                     <Card>
                         <div className="card-header">
                             <Title level={5}>Xác nhận giao dịch</Title>
@@ -456,7 +555,7 @@ const WithdrawalScreen = () => {
                     </Card>
                 )}
 
-                {step === 3 && (
+                {activeTab === "withdraw" && step === 3 && (
                     <Card>
                         <div className="card-header">
                             <Title level={5}>Xác thực bảo mật</Title>

@@ -32,6 +32,7 @@ import WithdrawalHistory from "../page/client/WithdrawalHistory";
 import CompareLaptop from "../page/client/CompareLaptop";
 import CompareBar from "../components/CompareBar";
 import { CompareProvider } from "../Utils/CompareContext";
+import DepositResultScreen from "../page/client/DepositResultScreen";
 
 // Layout component cho user routes
 const UserLayout = ({ children }) => (
@@ -58,6 +59,7 @@ export function AppRouter() {
       <Route path="/search/:text" element={<UserLayout><LaptopGrid /></UserLayout>} />
       <Route path="/search" element={<UserLayout><LaptopGrid /></UserLayout>} />
       <Route path="/wallet/:id" element={<UserLayout><WithdrawalScreen /></UserLayout>} />
+      <Route path="/wallet/deposit/result" element={<UserLayout><DepositResultScreen /></UserLayout>} />
       <Route path="/wallet-history/:id" element={<UserLayout><WithdrawalHistory /></UserLayout>} />
       <Route path="/compare" element={<UserLayout><CompareLaptop /></UserLayout>} />
       <Route path="/bot-chat" element={<UserLayout><BotChatPage /></UserLayout>} />

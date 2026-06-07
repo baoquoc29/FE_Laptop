@@ -12,6 +12,11 @@ export class PaymentService extends baseService {
     paycheck = (body) => {
        return this.post('api/v1/payments/check', body);
     }
-
+    createWalletDepositUrl = (userId, amount) => {
+        return this.post(`api/v1/payments/wallet/vnpay/create?userId=${userId}&amount=${amount}`, {});
+    }
+    confirmWalletDeposit = (queryString) => {
+        return this.get(`api/v1/payments/wallet/vnpay/confirm?${queryString}`, true);
+    }
 }
 export const paymentService = new PaymentService ();

@@ -43,8 +43,11 @@ export class UserService extends baseService {
         const params = new URLSearchParams(filteredParams).toString();
         return this.get(`api/v1/withdrawals/user/page?${params}`, true);
     }
-
-
-
+    getAdminUserDetail = (userId) => {
+        return this.get(`api/v1/users/admin/${userId}`, true);
+    }
+    updateAdminUser = (userId, body) => {
+        return this.put(`api/v1/users/admin/${userId}`, body);
+    }
 }
 export const userService = new UserService ();
