@@ -481,9 +481,19 @@ const OptionsStep = ({ form, onNext, onBack, initialValues }) => {
                     <Form.Item
                       name={['options', index, 'price']}
                       label="Giá"
-                      rules={[{ required: true, message: 'Vui lòng nhập giá!' }]}
+                      rules={[
+                        { required: true, message: 'Vui lòng nhập giá!' },
+                        {
+                          validator: (_, value) => {
+                            if (value !== undefined && value !== null && value < 0) {
+                              return Promise.reject("Giá không được âm");
+                            }
+                            return Promise.resolve();
+                          }
+                        }
+                      ]}
                     >
-                      <Input type="number" placeholder="0.00" />
+                      <InputNumber min={0} style={{ width: '100%' }} placeholder="Giá sản phẩm" />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -1015,8 +1025,18 @@ const VariantsStep = ({ form, onNext, onBack, initialValues }) => {
                       <Form.Item
                         name={['variants', optionIndex, variantIndex, 'priceDiff']}
                         label="Chênh lệch giá"
+                        rules={[
+                          {
+                            validator: (_, value) => {
+                              if (value !== undefined && value !== null && value < 0) {
+                                return Promise.reject("Chênh lệch giá không được âm");
+                              }
+                              return Promise.resolve();
+                            }
+                          }
+                        ]}
                       >
-                        <Input type="number" placeholder="0.00" />
+                        <InputNumber min={0} style={{ width: '100%' }} placeholder="0.00" />
                       </Form.Item>
                     </Col>
                     <Col span={12}>

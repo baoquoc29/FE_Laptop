@@ -296,20 +296,7 @@ const OrderManagement = () => {
         }
       };
 
-      if (values.status === "CANCELLED") {
-        Modal.confirm({
-          title: "Xác nhận hủy đơn hàng",
-          icon: <ExclamationCircleFilled />,
-          content: "Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.",
-          okText: "Xác nhận hủy",
-          cancelText: "Hủy bỏ",
-          onOk: async () => {
-            await executeUpdate();
-          }
-        });
-      } else {
-        await executeUpdate();
-      }
+      await executeUpdate();
     } catch (error) {
       if (error && error.errorFields) {
         const errorDesc = error.errorFields.map(f => f.errors.join(", ")).join("; ");
