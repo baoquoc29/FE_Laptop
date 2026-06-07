@@ -55,6 +55,7 @@ const PurchaseHistory = () => {
                 date: new Date(order.createdAt || Date.now()),
                 status: order.orderStatus,
                 paymentStatus: order.paymentStatus,
+                cancelReason: order.cancelReason || null,
                 subTotal: amounts.subTotal,
                 discountAmount: amounts.discountAmount,
                 shippingFee: amounts.shippingFee,
@@ -274,6 +275,12 @@ const PurchaseHistory = () => {
                                                     <span className="detail-label">Trạng thái:</span>
                                                     <StatusBadge status={order.status} />
                                                 </div>
+                                                {order.status === "CANCELLED" && order.cancelReason && (
+                                                    <div className="detail-item">
+                                                        <span className="detail-label">Lý do hủy đơn:</span>
+                                                        <span style={{ color: "#ff4d4f", fontWeight: 500 }}>{order.cancelReason}</span>
+                                                    </div>
+                                                )}
                                                 <div className="detail-item">
                                                     <span className="detail-label">Mã đơn hàng:</span>
                                                     <span>{order.id}</span>
@@ -416,10 +423,23 @@ const PurchaseHistory = () => {
                                                         <span>Đã giao hàng thành công</span>
                                                     </div>
                                                 )}
-                                                {order.status === "CANCELLED" && order.paymentStatus === "REFUNDED" && (
+                                                {order.status === "CANCELLED" && (
                                                     <div className="status-message cancelled">
                                                         <Package size={20} />
                                                         <span>Đơn hàng đã bị hủy</span>
+                                                    </div>
+                                                )}
+                                                {order.paymentStatus === "REFUNDED_SUCCESSFUL" && (
+                                                    <div 
+                                                        className="refund-note-message"
+                                                        style={{ 
+                                                            marginTop: "8px", 
+                                                            color: "#ff4d4f", 
+                                                            fontSize: "0.9rem", 
+                                                            fontWeight: "500"
+                                                        }}
+                                                    >
+                                                        Đơn hàng đã bị hủy. Số tiền đã được hoàn về ví tài khoản của bạn.
                                                     </div>
                                                 )}
                                             </div>

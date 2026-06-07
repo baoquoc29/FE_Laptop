@@ -83,7 +83,7 @@ const getPaymentStatusColor = (status) => {
 // Helper function để chuyển đổi PaymentStatus sang tiếng Việt
 const getPaymentStatusText = (status) => {
   const statusMap = {
-    FAILED: "Thất bại",
+    FAILED: "Thanh toán thất bại/Chưa thanh toán",
     PAID: "Đã thanh toán",
     REFUNDED: "Yêu cầu hoàn tiền",
     REFUNDED_SUCCESSFUL: "Đã hoàn tiền",
@@ -224,6 +224,7 @@ const OrderManagement = () => {
     }
     
     setCurrentOrder(order);
+    form.resetFields();
     form.setFieldsValue({ status: order.status });
     setIsStatusUpdateVisible(true);
   };
@@ -250,28 +251,67 @@ const OrderManagement = () => {
         setIsStatusUpdateVisible(false);
         return;
       }
-      
-      setLoading(true);
-      const response = await dispatch(updateOrderStatus(currentOrder.id, { status: values.status }));
-      
-      if (response === 200) {
-        notification.success({
-          message: "Cập nhật trạng thái đơn hàng thành công"
+
+      const executeUpdate = async () => {
+        try {
+          setLoading(true);
+          const response = await dispatch(updateOrderStatus(currentOrder.id, { 
+            status: values.status,
+            cancelReason: values.cancelReason
+          }));
+          
+          if (response === 200) {
+            notification.success({
+              message: "Cập nhật trạng thái đơn hàng thành công"
+            });
+            fetchOrders();
+            setIsStatusUpdateVisible(false);
+          } else {
+            notification.error({
+              message: "Không thể cập nhật trạng thái đơn hàng"
+            });
+          }
+        } catch (error) {
+          const errorMsg = error.response?.data?.message || error.response?.data || error.message || "";
+          const isMissingReasonError = typeof errorMsg === 'string' && (
+            errorMsg.includes("lý do") || 
+            errorMsg.toLowerCase().includes("reason") || 
+            errorMsg.toLowerCase().includes("thiếu") || 
+            errorMsg.toLowerCase().includes("cancel_reason")
+          );
+          
+          if (isMissingReasonError) {
+            notification.error({
+              message: "Vui lòng nhập lý do hủy đơn"
+            });
+          } else {
+            notification.error({
+              message: "Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng",
+              description: typeof errorMsg === 'string' ? errorMsg : undefined
+            });
+          }
+          console.error(error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      if (values.status === "CANCELLED") {
+        Modal.confirm({
+          title: "Xác nhận hủy đơn hàng",
+          icon: <ExclamationCircleFilled />,
+          content: "Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.",
+          okText: "Xác nhận hủy",
+          cancelText: "Hủy bỏ",
+          onOk: async () => {
+            await executeUpdate();
+          }
         });
-        fetchOrders();
-        setIsStatusUpdateVisible(false);
       } else {
-        notification.error({
-          message: "Không thể cập nhật trạng thái đơn hàng"
-        });
+        await executeUpdate();
       }
     } catch (error) {
-      notification.error({
-        message: "Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng"
-      });
-      console.error(error);
-    } finally {
-      setLoading(false);
+      console.log("Validation Failed:", error);
     }
   };
 
@@ -964,6 +1004,12 @@ const OrderManagement = () => {
                   {getStatusText(currentOrder.status)}
                 </Tag>
               </Descriptions.Item>
+              
+              {currentOrder.status === "CANCELLED" && currentOrder.cancelReason && (
+                <Descriptions.Item label="Lý do hủy đơn" span={3}>
+                  <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>{currentOrder.cancelReason}</span>
+                </Descriptions.Item>
+              )}
                 
                 <Descriptions.Item label="Phương thức thanh toán" span={1}>
                   {(() => {
@@ -1186,6 +1232,30 @@ const OrderManagement = () => {
                 <Option value="PENDING">Đang xử lý</Option>
                 <Option value="SHIPPED">Đang giao hàng</Option>
               </Select>
+            </Form.Item>
+
+            <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.status !== currentValues.status}>
+              {({ getFieldValue }) =>
+                getFieldValue('status') === 'CANCELLED' ? (
+                  <Form.Item
+                    name="cancelReason"
+                    label="Lý do hủy đơn"
+                    rules={[
+                      { required: true, message: "Vui lòng nhập lý do hủy đơn" },
+                      {
+                        validator: (_, value) => {
+                          if (!value || value.trim() === "") {
+                            return Promise.reject(new Error("Vui lòng nhập lý do hủy đơn"));
+                          }
+                          return Promise.resolve();
+                        }
+                      }
+                    ]}
+                  >
+                    <Input.TextArea rows={4} placeholder="Nhập lý do hủy đơn hàng..." />
+                  </Form.Item>
+                ) : null
+              }
             </Form.Item>
           </Form>
         </Modal>
