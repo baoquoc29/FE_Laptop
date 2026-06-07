@@ -260,7 +260,7 @@ const OrderManagement = () => {
             cancelReason: values.cancelReason
           }));
           
-          if (response === 200) {
+          if (response == 200 || response === undefined || response?.code == 200) {
             notification.success({
               message: "Cập nhật trạng thái đơn hàng thành công"
             });
@@ -311,6 +311,13 @@ const OrderManagement = () => {
         await executeUpdate();
       }
     } catch (error) {
+      if (error && error.errorFields) {
+        const errorDesc = error.errorFields.map(f => f.errors.join(", ")).join("; ");
+        notification.error({
+          message: "Lỗi xác thực dữ liệu",
+          description: errorDesc || "Vui lòng kiểm tra lại các trường thông tin."
+        });
+      }
       console.log("Validation Failed:", error);
     }
   };
@@ -1242,14 +1249,7 @@ const OrderManagement = () => {
                     label="Lý do hủy đơn"
                     rules={[
                       { required: true, message: "Vui lòng nhập lý do hủy đơn" },
-                      {
-                        validator: (_, value) => {
-                          if (!value || value.trim() === "") {
-                            return Promise.reject(new Error("Vui lòng nhập lý do hủy đơn"));
-                          }
-                          return Promise.resolve();
-                        }
-                      }
+                      { whitespace: true, message: "Vui lòng nhập lý do hủy đơn" }
                     ]}
                   >
                     <Input.TextArea rows={4} placeholder="Nhập lý do hủy đơn hàng..." />

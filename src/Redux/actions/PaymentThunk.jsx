@@ -16,8 +16,10 @@ export const createUrlPay = (amount, orderInfo) => async (dispatch) => {
                 type: "PAYMENT_URL_CREATED",
                 payload: paymentUrl, // Lưu URL thanh toán vào state nếu cần
             });
+            return paymentUrl;
         } else {
             console.log("Không có dữ liệu trả về từ API tạo URL thanh toán");
+            return null;
         }
     } catch (error) {
         if (error.response) {
@@ -27,6 +29,7 @@ export const createUrlPay = (amount, orderInfo) => async (dispatch) => {
             // Nếu lỗi không có response (ví dụ lỗi mạng), log lỗi chung
             console.log("Error during payment URL creation:", error.message);
         }
+        throw error;
     }
 };
 

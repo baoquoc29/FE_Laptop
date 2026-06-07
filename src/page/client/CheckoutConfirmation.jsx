@@ -395,11 +395,10 @@ const CheckoutConfirmation = () => {
                     break;
 
                 case 'VNPAY':
-                    const paymentRes = await dispatch(createUrlPay(total, res.data.orderId));
-                    if (!paymentRes?.payload?.url) {
+                    const paymentUrl = await dispatch(createUrlPay(total, res.data.orderId));
+                    if (!paymentUrl) {
                         throw new Error('Failed to create payment URL');
                     }
-                    window.location.href = paymentRes.payload.url;
                     break;
 
                 default:
