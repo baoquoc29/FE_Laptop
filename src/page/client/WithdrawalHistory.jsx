@@ -11,20 +11,7 @@ import {
     message,
     Modal
 } from "antd";
-import {
-    SearchOutlined,
-    FilterOutlined,
-    EyeOutlined,
-    CalendarOutlined,
-    WalletOutlined,
-    BankOutlined,
-    MobileOutlined,
-    CheckCircleOutlined,
-    ClockCircleOutlined,
-    CloseCircleOutlined,
-    ExclamationCircleOutlined,
-    InfoCircleOutlined
-} from "@ant-design/icons";
+// No icons imported
 import { useDispatch, useSelector } from "react-redux";
 import { getAllDrawl } from "../../Redux/actions/UserThunk";
 import "../style/WithdrawalHistory.css";
@@ -33,22 +20,18 @@ import "../style/WithdrawalHistory.css";
 const statusConfig = {
     PENDING: {
         label: "Đang chờ",
-        icon: <ClockCircleOutlined />,
         color: "orange",
     },
     APPROVED: {
         label: "Đã duyệt",
-        icon: <ExclamationCircleOutlined />,
         color: "blue",
     },
     REJECTED: {
         label: "Đã từ chối",
-        icon: <CloseCircleOutlined />,
         color: "red",
     },
     COMPLETED: {
         label: "Hoàn thành",
-        icon: <CheckCircleOutlined />,
         color: "green",
     },
 };
@@ -177,11 +160,6 @@ const WithdrawalHistory = () => {
             key: 'method',
             render: (_, record) => (
                 <div className="method-label-container">
-                    {record.requestNote?.includes("MoMo") ? (
-                        <MobileOutlined className="method-icon-momo" />
-                    ) : (
-                        <BankOutlined className="method-icon-bank" />
-                    )}
                     <span className="method-text-span">{record.requestNote || "Chuyển khoản"}</span>
                 </div>
             ),
@@ -200,7 +178,6 @@ const WithdrawalHistory = () => {
                 const dateTime = formatDateTime(dateString);
                 return (
                     <div className="date-label-container">
-                        <CalendarOutlined className="date-icon" />
                         <span>
                             {dateTime.date} <span className="time-subtext">{dateTime.time}</span>
                         </span>
@@ -237,7 +214,7 @@ const WithdrawalHistory = () => {
             render: (status) => {
                 const config = statusConfig[status] || statusConfig.PENDING;
                 return (
-                    <Tag icon={config.icon} color={config.color} className={`status-tag-${status.toLowerCase()}`}>
+                    <Tag color={config.color} className={`status-tag-${status.toLowerCase()}`}>
                         {config.label}
                     </Tag>
                 );
@@ -255,7 +232,6 @@ const WithdrawalHistory = () => {
             render: (_, record) => (
                 <Button 
                     type="link" 
-                    icon={<EyeOutlined />} 
                     onClick={() => handleViewDetails(record)}
                     className="view-detail-btn"
                 >
@@ -283,12 +259,8 @@ const WithdrawalHistory = () => {
         <div className="withdrawal-history-container">
             {/* Header */}
             <div className="withdrawal-history-header">
-                <div className="header-overlay"></div>
                 <div className="container header-container-inner">
                     <div className="header-text-section">
-                        <div className="header-icon-wrapper">
-                            <WalletOutlined />
-                        </div>
                         <div>
                             <h1>Lịch sử rút tiền</h1>
                             <p>Theo dõi trạng thái và quản lý các yêu cầu rút tiền của bạn</p>
@@ -302,9 +274,6 @@ const WithdrawalHistory = () => {
                 <div className="stats-grid">
                     <div className="stat-card stat-total">
                         <div className="stat-card-inner">
-                            <div className="stat-icon-container">
-                                <WalletOutlined />
-                            </div>
                             <div className="stat-info">
                                 <span className="stat-title">Tổng yêu cầu</span>
                                 <span className="stat-value">{stats.total}</span>
@@ -313,9 +282,6 @@ const WithdrawalHistory = () => {
                     </div>
                     <div className="stat-card stat-pending">
                         <div className="stat-card-inner">
-                            <div className="stat-icon-container">
-                                <ClockCircleOutlined />
-                            </div>
                             <div className="stat-info">
                                 <span className="stat-title">Đang chờ</span>
                                 <span className="stat-value">{stats.pending}</span>
@@ -324,9 +290,6 @@ const WithdrawalHistory = () => {
                     </div>
                     <div className="stat-card stat-approved">
                         <div className="stat-card-inner">
-                            <div className="stat-icon-container">
-                                <ExclamationCircleOutlined />
-                            </div>
                             <div className="stat-info">
                                 <span className="stat-title">Đã duyệt</span>
                                 <span className="stat-value">{stats.approved}</span>
@@ -335,9 +298,6 @@ const WithdrawalHistory = () => {
                     </div>
                     <div className="stat-card stat-completed">
                         <div className="stat-card-inner">
-                            <div className="stat-icon-container">
-                                <CheckCircleOutlined />
-                            </div>
                             <div className="stat-info">
                                 <span className="stat-title">Thành công</span>
                                 <span className="stat-value">{stats.completed}</span>
@@ -346,9 +306,6 @@ const WithdrawalHistory = () => {
                     </div>
                     <div className="stat-card stat-rejected">
                         <div className="stat-card-inner">
-                            <div className="stat-icon-container">
-                                <CloseCircleOutlined />
-                            </div>
                             <div className="stat-info">
                                 <span className="stat-title">Bị từ chối</span>
                                 <span className="stat-value">{stats.rejected}</span>
@@ -357,9 +314,6 @@ const WithdrawalHistory = () => {
                     </div>
                     <div className="stat-card stat-amount">
                         <div className="stat-card-inner">
-                            <div className="stat-icon-container">
-                                <BankOutlined />
-                            </div>
                             <div className="stat-info">
                                 <span className="stat-title">Tổng đã nhận</span>
                                 <span className="stat-value">{formatCurrency(stats.totalAmount)}</span>
@@ -371,14 +325,12 @@ const WithdrawalHistory = () => {
                 {/* Bộ lọc và tìm kiếm */}
                 <Card className="filter-history-card">
                     <div className="filter-history-header-inline">
-                        <FilterOutlined />
                         <span>Bộ lọc tìm kiếm</span>
                     </div>
                     <div className="filter-history-content">
                         <div className="search-history-input">
                             <Input
                                 placeholder="Nhập mã giao dịch hoặc số tài khoản..."
-                                prefix={<SearchOutlined />}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 allowClear
@@ -448,7 +400,7 @@ const WithdrawalHistory = () => {
                         locale={{
                             emptyText: (
                                 <Empty
-                                    image={<SearchOutlined className="empty-search-icon" />}
+                                    image={Empty.PRESENTED_IMAGE_SIMPLE}
                                     description={
                                         <div className="empty-description">
                                             <div className="empty-title">Không tìm thấy giao dịch nào</div>
@@ -466,9 +418,6 @@ const WithdrawalHistory = () => {
             <Modal
                 title={
                     <div className="detail-modal-title">
-                        <div className="modal-title-icon-wrapper">
-                            <WalletOutlined />
-                        </div>
                         <div>
                             <h3>Chi tiết giao dịch</h3>
                             <span className="modal-subtitle">Thông tin chi tiết yêu cầu rút tiền</span>
@@ -497,7 +446,7 @@ const WithdrawalHistory = () => {
                                 </span>
                             </div>
                             <div className="header-card-status">
-                                <Tag icon={statusConfig[selectedWithdrawal.status]?.icon} color={statusConfig[selectedWithdrawal.status]?.color} className="status-tag-large">
+                                <Tag color={statusConfig[selectedWithdrawal.status]?.color} className="status-tag-large">
                                     {statusConfig[selectedWithdrawal.status]?.label.toUpperCase()}
                                 </Tag>
                             </div>
@@ -518,11 +467,6 @@ const WithdrawalHistory = () => {
                                 <div className="info-row">
                                     <span className="info-label">Phương thức:</span>
                                     <span className="info-value flex-align-center">
-                                        {selectedWithdrawal.requestNote?.includes("MoMo") ? (
-                                            <MobileOutlined className="method-icon momo-icon" />
-                                        ) : (
-                                            <BankOutlined className="method-icon bank-icon" />
-                                        )}
                                         <span className="method-text">{selectedWithdrawal.requestNote || "Chuyển khoản"}</span>
                                     </span>
                                 </div>
@@ -536,7 +480,6 @@ const WithdrawalHistory = () => {
                         {/* Phản hồi từ Admin */}
                         <div className={`detail-feedback-block feedback-${selectedWithdrawal.status?.toLowerCase() || "pending"}`}>
                             <div className="feedback-header">
-                                <InfoCircleOutlined className="feedback-icon" />
                                 <span>Phản hồi từ Ban Quản Trị</span>
                             </div>
                             <div className="feedback-content">
